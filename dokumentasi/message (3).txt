@@ -1,0 +1,29 @@
+Liked Songs and playlists are the same track list from different sources. Tell the group that every endpoint returns tracks in the same JSON shape: track_id, title, artist_name, cover_path, file_path, duration_sec. That lets you reuse one track-row component everywhere.
+
+Decide these before they start
+Who sees which tracks? The schema doesn’t say. I’d go with all tracks visible to every logged-in user (Explorer shows everything). Library shows your playlists and your uploads. It’s the simplest rule, and every query depends on it.
+Login is now required, not optional. tracks.uploader_id, playlists.user_id and likes.user_id are all NOT NULL, so nothing works without a user. That’s fine. It just means the login screen and a basic PHP session are part of the core flow.
+Is artist required on the upload form? tracks.artist_id is NOT NULL, so either the form requires it or PHP falls back to “Unknown Artist”.
+Your search placeholder says “songs, albums, artists”, but the notes say there’s no album UI in v1. I’d change the placeholder to “songs, artists”.
+play_history: it’s one cheap table, so have them create it now. Hook it up only if your Home design ends up with a “Recently played” row.
+Check with the DB lecturer whether there’s a minimum table count or a normalization level. It’s the open question in the Notes sheet. It takes 2 minutes to ask and could change the schema.
+Roadblocks (all common on XAMPP)
+XAMPP’s upload limit will silently kill mp3 uploads. The default upload_max_filesize is 2MB and post_max_size is 8MB. In php.ini set upload_max_filesize=32M and post_max_size=40M, then restart Apache. Each person has to do this on their own machine.
+Seed songs won’t exist on everyone’s machine. The DB lives in each person’s XAMPP, and .gitignore skips mp3s. So seed.sql rows point to files that only exist on the author’s computer, and everyone else gets 404s. The fix is to commit 5 to 6 small royalty-free mp3s in uploads/seed/ and add !uploads/seed/ to .gitignore so they’re excluded from the *.mp3 rule. Use CC0 or royalty-free tracks and credit them in the README. Also check GitHub Desktop’s Changes list before your commit, to make sure test.mp3 didn’t sneak in with visualizer_proto.
+duration_sec is easy to forget. PHP can’t read mp3 length without a library, but your Up Next rows show durations. The frontend can read it in the browser when a file is picked (load it into an Audio element, then read duration) and send it with the upload form. That’s your job, not theirs.
+Seed passwords can’t be plain text. seed.sql needs real hashes. Have them run a one-line PHP script with password_hash('test1234', PASSWORD_DEFAULT) and paste the output into the seed.
+Agree on exact names now: database tunyx, and DB login root with an empty password (the XAMPP default, so one api/config.php works for everyone). The notes say to tell you if a column name changes. Hold them to that.
+Uploads must be plain files. move_uploaded_file() into uploads/ with a random name, and the player points at that path directly. This is the “same origin, no PHP streaming” rule from earlier.
+Step by step for them
+
+Order matters because a foreign key needs its target table to exist first.
+
+In phpMyAdmin, create database tunyx with collation utf8mb4_unicode_ci.
+Create the tables parents first: users, artists, albums, tracks, playlists, playlist_tracks, likes, play_history. Use InnoDB for all of them.
+Add the FKs with delete rules: CASCADE on the junction tables (as the sheet suggests), and tracks.album_id as ON DELETE SET NULL. Use RESTRICT on the rest.
+Export as db/schema.sql. Tick “Add DROP TABLE” so re-importing after a change works.
+Write db/seed.sql, again parents first: 1 to 2 users, 3 artists, 2 albums, 6 tracks (matching your 6 queue rows), 1 playlist with a few tracks, a few likes.
+Test by hand in phpMyAdmin. Tracks with artist names should come back via a JOIN, a playlist’s tracks should come back ordered by position, and one user’s liked tracks should come back.
+Commit and push, then message the group to re-import.
+
+For dates, I’d reuse the plan from before: tables by Nov 17, seed by Nov 18, endpoints by Nov 19 to 22.

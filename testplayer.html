@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>TUNYX Local Tester</title>
+  <style>
+    body { font-family: sans-serif; max-width: 650px; margin: 30px auto; padding: 0 15px; }
+    .box { border: 1px solid #ccc; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    input { padding: 6px; margin-right: 5px; }
+    button { padding: 6px 12px; cursor: pointer; }
+    .song-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+    pre { background: #f4f4f4; padding: 10px; font-size: 0.8em; overflow-x: auto; max-height: 150px; }
+  </style>
+</head>
+<body>
+
+  <h2>TUNYX — Local API & Player Test</h2>
+
+  <!-- 1. Login -->
+  <div class="box">
+    <strong>1. Login</strong><br><br>
+    <input type="text" id="login-email" value="fey@tunyx.id" placeholder="Email / Username">
+    <input type="password" id="login-pass" placeholder="Password">
+    <button onclick="doLogin()">Login</button>
+    <button onclick="doLogout()">Logout</button>
+    <p id="auth-status" style="margin: 8px 0 0; font-size: 0.9em;">Status: Mengecek...</p>
+  </div>
+
+  <!-- 2. Player -->
+  <div class="box">
+    <strong>2. Pemutar Audio</strong>
+    <p id="now-playing">Pilih lagu di bawah untuk memutar...</p>
+    <img id="cover-img" src="" width="120" style="display:none; margin-bottom:10px; border-radius:4px;">
+    <audio id="player" controls style="width: 100%;"></audio>
+    <p id="audio-error" style="color:red; font-size:0.85em; margin:5px 0 0;"></p>
+  </div>
+
+  <!-- 3. Daftar Lagu -->
+  <div class="box">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <strong>3. Daftar Lagu</strong>
+      <button onclick="loadSongs()">Refresh Lagu</button>
+    </div>
+    <div id="song-list" style="margin-top: 10px;">Memuat...</div>
+  </div>
+
+  <!-- 4. Debug JSON -->
+  <div class="box">
+    <strong>Debug Response <code>api/songs.php</code>:</strong>
+    <pre id="debug-json">Belum ada data...</pre>
+  </div>
+
+  <script>
+    const player = document.getElementById('player');
+    const nowPlaying = document.getElementById('now-playing');
+    const coverImg = document.getElementById('cover-img');
+    const songList = document.getElementById('song-list');
+    const authStatus = document.getElementById('auth-status');
+    const debugJson = document.getElementById('debug-json');
+    const audioError = document.getElementById('audio-error');
+
+    player.addEventListener('error', () => {
+      audioError.textContent = `Gagal memutar file: ${player.getAttribute('src')} (Cek apakah file ada di folder uploads/ atau uploads/songs/)`;
+    });
+
+    async function checkMe() {
+      const res = await fetch('api/me.php', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        authStatus.textContent = `Login aktif: ${data.user?.username || data.data?.username || 'OK'}`;
+        authStatus.style.color = 'green';
+        loadSongs();
+      } else {
+        authStatus.textContent = 'Status: Belum login';
+        authStatus.style.color = 'red';
+        songList.innerHTML = 'Silakan login terlebih dahulu.';
+      }
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-pass').value;
+
+      const res = await fetch('api/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        checkMe();
+      } else {
+        alert('Login gagal: ' + data.message);
+      }
+    }
+
+    async function doLogout() {
+      await fetch('api/logout.php', { method: 'POST', credentials: 'include' });
+      checkMe();
+    }
+
+    // Fungsi pencari array lagu secara otomatis di level manapun dalam object JSON
+    function extractSongsArray(obj) {
+      if (Array.isArray(obj)) return obj;
+      if (obj && typeof obj === 'object') {
+        for (const key of Object.keys(obj)) {
+          if (Array.isArray(obj[key])) return obj[key];
+          if (obj[key] && typeof obj[key] === 'object') {
+            const nested = extractSongsArray(obj[key]);
+            if (nested.length > 0) return nested;
+          }
+        }
+      }
+      return [];
+    }
+
+    async function loadSongs() {
+      const res = await fetch('api/songs.php', { credentials: 'include' });
+      const data = await res.json();
+
+      debugJson.textContent = JSON.stringify(data, null, 2);
+
+      if (!data.success) {
+        songList.innerHTML = `<span style="color:red;">${data.message}</span>`;
+        return;
+      }
+
+      const songs = extractSongsArray(data);
+
+      if (songs.length === 0) {
+        songList.innerHTML = '<span style="color:orange;">Array lagu kosong.</span>';
+        return;
+      }
+
+      songList.innerHTML = '';
+      songs.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'song-item';
+
+        const info = document.createElement('div');
+        info.innerHTML = `
+          <strong>${s.title}</strong> <small>(${s.artist_name || s.artist || 'Artist #' + s.artist_id})</small><br>
+          <code style="font-size:0.8em; color:#666;">${s.file_path}</code>
+        `;
+
+        const btn = document.createElement('button');
+        btn.textContent = 'Play ▶';
+        btn.addEventListener('click', () => {
+          playTrack(s.file_path, s.title, s.cover_path);
+        });
+
+        div.appendChild(info);
+        div.appendChild(btn);
+        songList.appendChild(div);
+      });
+    }
+
+    function playTrack(filePath, title, coverPath) {
+      audioError.textContent = '';
+      player.src = filePath;
+      player.play().catch(err => {
+        audioError.textContent = 'Error playback: ' + err.message;
+      });
+      nowPlaying.textContent = `Memutar: ${title}`;
+
+      if (coverPath) {
+        coverImg.src = coverPath;
+        coverImg.style.display = 'block';
+      } else {
+        coverImg.style.display = 'none';
+      }
+    }
+
+    checkMe();
+  </script>
+</body>
+</html>

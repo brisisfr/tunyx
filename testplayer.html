@@ -2,178 +2,739 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>TUNYX Local Tester</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TUNYX — Music Player</title>
   <style>
-    body { font-family: sans-serif; max-width: 650px; margin: 30px auto; padding: 0 15px; }
-    .box { border: 1px solid #ccc; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
-    input { padding: 6px; margin-right: 5px; }
-    button { padding: 6px 12px; cursor: pointer; }
-    .song-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-    pre { background: #f4f4f4; padding: 10px; font-size: 0.8em; overflow-x: auto; max-height: 150px; }
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #334155;
+      --border: #334155;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent: #10b981;
+      --liked: #f43f5e;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 110px; }
+
+    /* Navbar */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 14px 24px; display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .brand { font-size: 1.35rem; font-weight: 800; color: var(--primary); letter-spacing: 1px; }
+    .brand span { color: var(--muted); font-weight: 400; font-size: 0.85rem; margin-left: 6px; }
+    .user-bar { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+
+    /* Buttons & Inputs */
+    button {
+      background: var(--primary); color: #0f172a; border: none; padding: 8px 14px;
+      border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: 0.15s;
+    }
+    button:hover { background: var(--primary-hover); color: #fff; }
+    button.secondary { background: var(--surface-hover); color: var(--text); }
+    button.secondary:hover { background: #475569; }
+    button.liked-btn { background: rgba(244, 63, 94, 0.15); color: var(--liked); border: 1px solid var(--liked); }
+    button.danger { background: var(--danger); color: #fff; }
+    button.sm { padding: 5px 10px; font-size: 0.78rem; }
+
+    input, select {
+      background: #0f172a; border: 1px solid var(--border); color: var(--text);
+      padding: 8px 10px; border-radius: 6px; font-size: 0.88rem; width: 100%;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+    /* Auth Screen */
+    .auth-wrapper { max-width: 420px; margin: 50px auto; padding: 0 16px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-bottom: 18px;
+    }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tabs button { flex: 1; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+
+    /* Main App Layout */
+    .container { max-width: 1200px; margin: 24px auto; padding: 0 20px; display: grid; grid-template-columns: 330px 1fr; gap: 20px; }
+    @media (max-width: 860px) { .container { grid-template-columns: 1fr; } }
+
+    h3 { font-size: 1.05rem; margin-bottom: 12px; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+
+    /* Track List */
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .filter-bar input { flex: 2; min-width: 160px; }
+    .filter-bar select { flex: 1; min-width: 120px; }
+
+    .track-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px; border-radius: 8px; background: #0f172a; border: 1px solid transparent;
+      margin-bottom: 8px; transition: 0.15s;
+    }
+    .track-item:hover { border-color: var(--border); }
+    .track-item.active { border-color: var(--primary); background: #162238; }
+    .track-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
+    .track-cover { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: #334155; flex-shrink: 0; }
+    .track-meta { overflow: hidden; }
+    .track-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-sub { font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .track-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    /* Playlist Items */
+    .pl-item {
+      padding: 9px 12px; border-radius: 6px; background: #0f172a; margin-bottom: 6px;
+      display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .pl-item:hover, .pl-item.selected { border-color: var(--primary); }
+    .pl-track-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      padding: 7px 10px; background: #0f172a; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center; padding: 36px 20px; border: 1px dashed var(--border);
+      border-radius: 8px; color: var(--muted); font-size: 0.92rem; line-height: 1.5;
+    }
+
+    /* Bottom Persistent Player */
+    .player-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #0b1120;
+      border-top: 1px solid var(--border); padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; z-index: 100;
+    }
+    .now-info { display: flex; align-items: center; gap: 12px; min-width: 220px; max-width: 300px; }
+    .now-info img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: #1e293b; }
+    .audio-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    audio { width: 100%; height: 36px; }
+    .toast {
+      position: fixed; top: 70px; right: 20px; background: var(--accent); color: #0f172a;
+      padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.88rem;
+      display: none; z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .toast.err { background: var(--danger); color: #fff; }
+    .hidden { display: none !important; }
+    .badge { background: var(--surface-hover); color: var(--primary); padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; }
   </style>
 </head>
 <body>
 
-  <h2>TUNYX — Local API & Player Test</h2>
-
-  <!-- 1. Login -->
-  <div class="box">
-    <strong>1. Login</strong><br><br>
-    <input type="text" id="login-email" value="fey@tunyx.id" placeholder="Email / Username">
-    <input type="password" id="login-pass" placeholder="Password">
-    <button onclick="doLogin()">Login</button>
-    <button onclick="doLogout()">Logout</button>
-    <p id="auth-status" style="margin: 8px 0 0; font-size: 0.9em;">Status: Mengecek...</p>
-  </div>
-
-  <!-- 2. Player -->
-  <div class="box">
-    <strong>2. Pemutar Audio</strong>
-    <p id="now-playing">Pilih lagu di bawah untuk memutar...</p>
-    <img id="cover-img" src="" width="120" style="display:none; margin-bottom:10px; border-radius:4px;">
-    <audio id="player" controls style="width: 100%;"></audio>
-    <p id="audio-error" style="color:red; font-size:0.85em; margin:5px 0 0;"></p>
-  </div>
-
-  <!-- 3. Daftar Lagu -->
-  <div class="box">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <strong>3. Daftar Lagu</strong>
-      <button onclick="loadSongs()">Refresh Lagu</button>
+  <!-- Header -->
+  <header>
+    <div class="brand">TUNYX <span>Clean API v2</span></div>
+    <div class="user-bar">
+      <span id="user-badge" style="color: var(--muted);">Belum login</span>
+      <button class="secondary sm hidden" id="btn-logout" onclick="doLogout()">Logout</button>
     </div>
-    <div id="song-list" style="margin-top: 10px;">Memuat...</div>
+  </header>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- VIEW 1: LOGIN & REGISTER -->
+  <div id="auth-view" class="auth-wrapper">
+    <div class="card">
+      <div class="tabs">
+        <button id="tab-register" onclick="switchAuthTab('register')">Daftar Akun</button>
+        <button id="tab-login" class="secondary" onclick="switchAuthTab('login')">Login</button>
+      </div>
+
+      <!-- Form Register -->
+      <form id="form-register" onsubmit="doRegister(event)">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="reg-user" placeholder="contoh: forry" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="contoh: forry@tunyx.id" required>
+        </div>
+        <div class="form-group">
+          <label>Password (minimal 6 karakter)</label>
+          <input type="password" id="reg-pass" placeholder="••••••" required>
+        </div>
+        <button type="submit" style="width:100%;">Buat Akun Baru</button>
+      </form>
+
+      <!-- Form Login -->
+      <form id="form-login" class="hidden" onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label>Email atau Username</label>
+          <input type="text" id="login-id" placeholder="Masukkan email atau username..." required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-pass" placeholder="Masukkan password..." required>
+        </div>
+        <button type="submit" style="width:100%;">Masuk ke TUNYX</button>
+      </form>
+    </div>
   </div>
 
-  <!-- 4. Debug JSON -->
-  <div class="box">
-    <strong>Debug Response <code>api/songs.php</code>:</strong>
-    <pre id="debug-json">Belum ada data...</pre>
+  <!-- VIEW 2: MAIN APP -->
+  <div id="app-view" class="container hidden">
+
+    <!-- SIDEBAR: PLAYLISTS & UPLOAD LAGU -->
+    <div>
+      <!-- Playlists Panel -->
+      <div class="card">
+        <h3>
+          <span>Playlist Saya</span>
+          <span class="badge" id="pl-count">0</span>
+        </h3>
+        <form onsubmit="createPlaylist(event)" style="display:flex; gap:6px; margin-bottom:12px;">
+          <input type="text" id="new-pl-title" placeholder="Nama playlist baru..." required>
+          <button type="submit" class="sm">+ Buat</button>
+        </form>
+        <div id="playlist-list"></div>
+
+        <!-- Detail Isi Playlist -->
+        <div id="playlist-detail" class="hidden" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+          <div style="font-size:0.88rem; font-weight:600; margin-bottom:8px; color:var(--accent);" id="selected-pl-name"></div>
+          <div id="playlist-tracks-list"></div>
+        </div>
+      </div>
+
+      <!-- Upload Panel -->
+      <div class="card">
+        <h3>
+          <span>Upload Lagu Baru</span>
+          <span class="badge">Auto Artis/Album</span>
+        </h3>
+        <form id="upload-form" onsubmit="uploadTrack(event)">
+          <div class="form-group">
+            <label>Judul Lagu *</label>
+            <input type="text" name="title" placeholder="contoh: Hana no Tou" required>
+          </div>
+          <div class="form-group">
+            <label>Nama Artis *</label>
+            <input type="text" name="artist_name" placeholder="contoh: Sayuri" required>
+          </div>
+          <div class="form-group">
+            <label>Judul Album (Kosongkan jika Single)</label>
+            <input type="text" name="album_title" placeholder="contoh: Sanketsu Shōjo">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div class="form-group">
+              <label>Genre</label>
+              <input type="text" name="genre" placeholder="JPop / Rock">
+            </div>
+            <div class="form-group">
+              <label>Durasi (Detik)</label>
+              <input type="number" name="duration_sec" id="input-duration" placeholder="Otomatis / isi manual" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>File Audio (MP3/FLAC/WAV/OGG/M4A/AAC) *</label>
+            <input type="file" name="audio" id="input-audio" accept=".mp3,.flac,.wav,.ogg,.m4a,.aac" required onchange="autoDetectDuration(this)">
+          </div>
+          <div class="form-group">
+            <label>Cover Gambar (JPG/PNG/WEBP, Opsional)</label>
+            <input type="file" name="cover" accept=".jpg,.jpeg,.png,.webp">
+          </div>
+          <button type="submit" id="btn-upload" style="width:100%;">Upload Lagu</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT: KATALOG LAGU -->
+    <div>
+      <div class="card">
+        <h3>
+          <span>Katalog Lagu TUNYX</span>
+          <span class="badge" id="track-count">0 lagu</span>
+        </h3>
+
+        <!-- Pencarian, Filter Genre & Filter Liked -->
+        <div class="filter-bar">
+          <input type="text" id="search-q" placeholder="Cari judul lagu atau nama artis..." oninput="loadSongs()">
+          <select id="filter-genre" onchange="loadSongs()">
+            <option value="">Semua Genre</option>
+          </select>
+          <button class="secondary" id="btn-filter-liked" onclick="toggleLikedFilter()">♥ Disukai</button>
+          <button class="secondary" onclick="resetFilter()">Reset</button>
+        </div>
+
+        <div id="tracks-container"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM AUDIO PLAYER -->
+  <div class="player-bar hidden" id="player-bar">
+    <div class="now-info">
+      <img id="player-cover" src="" alt="Cover" style="visibility:hidden;">
+      <div style="overflow:hidden;">
+        <div id="player-title" style="font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Belum ada lagu diputar</div>
+        <div id="player-artist" style="font-size:0.8rem; color:var(--muted);">Upload atau pilih lagu dari katalog</div>
+      </div>
+    </div>
+    <div class="audio-wrap">
+      <audio id="audio-player" controls></audio>
+      <div id="player-error" style="color:var(--danger); font-size:0.78rem;"></div>
+    </div>
+    <div>
+      <button class="secondary sm" onclick="playNext()">Next ⏭</button>
+    </div>
   </div>
 
   <script>
-    const player = document.getElementById('player');
-    const nowPlaying = document.getElementById('now-playing');
-    const coverImg = document.getElementById('cover-img');
-    const songList = document.getElementById('song-list');
-    const authStatus = document.getElementById('auth-status');
-    const debugJson = document.getElementById('debug-json');
-    const audioError = document.getElementById('audio-error');
+    let allTracks = [];
+    let currentTrackIndex = -1;
+    let userPlaylists = [];
+    let selectedPlaylistId = null;
+    let filterOnlyLiked = false;
 
-    player.addEventListener('error', () => {
-      audioError.textContent = `Gagal memutar file: ${player.getAttribute('src')} (Cek apakah file ada di folder uploads/ atau uploads/songs/)`;
-    });
+    const audioEl = document.getElementById('audio-player');
+    const toastEl = document.getElementById('toast');
 
-    async function checkMe() {
-      const res = await fetch('api/me.php', { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        authStatus.textContent = `Login aktif: ${data.user?.username || data.data?.username || 'OK'}`;
-        authStatus.style.color = 'green';
-        loadSongs();
-      } else {
-        authStatus.textContent = 'Status: Belum login';
-        authStatus.style.color = 'red';
-        songList.innerHTML = 'Silakan login terlebih dahulu.';
+    function showToast(msg, isErr = false) {
+      toastEl.textContent = msg;
+      toastEl.className = isErr ? 'toast err' : 'toast';
+      toastEl.style.display = 'block';
+      setTimeout(() => { toastEl.style.display = 'none'; }, 3500);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function formatDuration(sec) {
+      if (!sec && sec !== 0) return '--:--';
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function autoDetectDuration(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const tempAudio = document.createElement('audio');
+      tempAudio.preload = 'metadata';
+      tempAudio.onloadedmetadata = function() {
+        window.URL.revokeObjectURL(tempAudio.src);
+        if (tempAudio.duration && !isNaN(tempAudio.duration)) {
+          document.getElementById('input-duration').value = Math.round(tempAudio.duration);
+        }
+      };
+      tempAudio.src = URL.createObjectURL(file);
+    }
+
+    // ==================== 1. AUTH ====================
+    function switchAuthTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-register').classList.toggle('hidden', isLogin);
+      document.getElementById('tab-login').className = isLogin ? '' : 'secondary';
+      document.getElementById('tab-register').className = !isLogin ? '' : 'secondary';
+    }
+
+    async function checkSession() {
+      try {
+        const res = await fetch('api/me.php', { credentials: 'include' });
+        const json = await res.json();
+        if (json.success) {
+          const u = json.data?.user || {};
+          document.getElementById('user-badge').innerHTML = `Halo, <strong style="color:var(--text);">${esc(u.username)}</strong>`;
+          document.getElementById('btn-logout').classList.remove('hidden');
+          document.getElementById('auth-view').classList.add('hidden');
+          document.getElementById('app-view').classList.remove('hidden');
+          document.getElementById('player-bar').classList.remove('hidden');
+
+          await loadPlaylists();
+          await loadSongs(true);
+        } else {
+          showLoggedOut();
+        }
+      } catch (e) {
+        showLoggedOut();
       }
     }
 
-    async function doLogin() {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-pass').value;
+    function showLoggedOut() {
+      document.getElementById('user-badge').textContent = 'Belum login';
+      document.getElementById('btn-logout').classList.add('hidden');
+      document.getElementById('auth-view').classList.remove('hidden');
+      document.getElementById('app-view').classList.add('hidden');
+      document.getElementById('player-bar').classList.add('hidden');
+      audioEl.pause();
+    }
+
+    async function doRegister(e) {
+      e.preventDefault();
+      const username = document.getElementById('reg-user').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-pass').value;
+
+      const res = await fetch('api/register.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, email, password })
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(json.message);
+        document.getElementById('login-id').value = email;
+        switchAuthTab('login');
+      } else {
+        showToast(json.message || 'Registrasi gagal', true);
+      }
+    }
+
+    async function doLogin(e) {
+      e.preventDefault();
+      const identifier = document.getElementById('login-id').value.trim();
+      const password   = document.getElementById('login-pass').value;
 
       const res = await fetch('api/login.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ identifier, password })
       });
-      const data = await res.json();
-
-      if (data.success) {
-        checkMe();
+      const json = await res.json();
+      if (json.success) {
+        showToast(json.message);
+        checkSession();
       } else {
-        alert('Login gagal: ' + data.message);
+        showToast(json.message || 'Login gagal', true);
       }
     }
 
     async function doLogout() {
-      await fetch('api/logout.php', { method: 'POST', credentials: 'include' });
-      checkMe();
+      const res = await fetch('api/logout.php', { method: 'POST', credentials: 'include' });
+      const json = await res.json();
+      showToast(json.message || 'Logout berhasil');
+      showLoggedOut();
     }
 
-    // Fungsi pencari array lagu secara otomatis di level manapun dalam object JSON
-    function extractSongsArray(obj) {
-      if (Array.isArray(obj)) return obj;
-      if (obj && typeof obj === 'object') {
-        for (const key of Object.keys(obj)) {
-          if (Array.isArray(obj[key])) return obj[key];
-          if (obj[key] && typeof obj[key] === 'object') {
-            const nested = extractSongsArray(obj[key]);
-            if (nested.length > 0) return nested;
-          }
-        }
-      }
-      return [];
+    // ==================== 2. CATALOG, SEARCH & LIKED FILTER ====================
+    function toggleLikedFilter() {
+      filterOnlyLiked = !filterOnlyLiked;
+      const btn = document.getElementById('btn-filter-liked');
+      btn.className = filterOnlyLiked ? 'liked-btn' : 'secondary';
+      loadSongs();
     }
 
-    async function loadSongs() {
-      const res = await fetch('api/songs.php', { credentials: 'include' });
-      const data = await res.json();
+    async function loadSongs(populateGenres = false) {
+      const q     = document.getElementById('search-q').value.trim();
+      const genre = document.getElementById('filter-genre').value;
 
-      debugJson.textContent = JSON.stringify(data, null, 2);
+      const params = new URLSearchParams();
+      if (q) params.append('q', q);
+      if (genre) params.append('genre', genre);
+      if (filterOnlyLiked) params.append('liked', '1');
 
-      if (!data.success) {
-        songList.innerHTML = `<span style="color:red;">${data.message}</span>`;
+      const res = await fetch(`api/songs.php?${params.toString()}`, { credentials: 'include' });
+      const json = await res.json();
+
+      if (!json.success) {
+        showToast(json.message, true);
         return;
       }
 
-      const songs = extractSongsArray(data);
+      allTracks = json.data?.tracks || [];
+      document.getElementById('track-count').textContent = `${allTracks.length} lagu`;
 
-      if (songs.length === 0) {
-        songList.innerHTML = '<span style="color:orange;">Array lagu kosong.</span>';
+      if (populateGenres) {
+        const genreSelect = document.getElementById('filter-genre');
+        const genres = [...new Set(allTracks.map(t => t.genre).filter(Boolean))];
+        genreSelect.innerHTML = '<option value="">Semua Genre</option>' +
+          genres.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+      }
+
+      renderTracks();
+    }
+
+    function resetFilter() {
+      document.getElementById('search-q').value = '';
+      document.getElementById('filter-genre').value = '';
+      filterOnlyLiked = false;
+      document.getElementById('btn-filter-liked').className = 'secondary';
+      loadSongs();
+    }
+
+    function renderTracks() {
+      const container = document.getElementById('tracks-container');
+      if (allTracks.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <strong>Belum ada lagu di database.</strong><br>
+            Gunakan panel <em>"Upload Lagu Baru"</em> di sebelah kiri untuk menambahkan lagu pertamamu!
+          </div>`;
         return;
       }
 
-      songList.innerHTML = '';
-      songs.forEach(s => {
+      container.innerHTML = '';
+      allTracks.forEach((t, idx) => {
         const div = document.createElement('div');
-        div.className = 'song-item';
+        div.className = 'track-item' + (currentTrackIndex === idx ? ' active' : '');
 
-        const info = document.createElement('div');
-        info.innerHTML = `
-          <strong>${s.title}</strong> <small>(${s.artist_name || s.artist || 'Artist #' + s.artist_id})</small><br>
-          <code style="font-size:0.8em; color:#666;">${s.file_path}</code>
+        const plOptions = userPlaylists.length > 0
+          ? `<select style="width:auto; padding:5px 7px; font-size:0.78rem;" onchange="addTrackToPlaylist(this, ${t.track_id})">
+               <option value="">+ Playlist</option>
+               ${userPlaylists.map(p => `<option value="${p.playlist_id}">${esc(p.title)}</option>`).join('')}
+             </select>`
+          : '';
+
+        const likeClass = t.is_liked ? 'liked-btn sm' : 'secondary sm';
+        const likeLabel = t.is_liked ? '♥ Liked' : '♡ Like';
+
+        div.innerHTML = `
+          <div class="track-left">
+            <img class="track-cover" src="${esc(t.cover_path || '')}" onerror="this.style.visibility='hidden'">
+            <div class="track-meta">
+              <div class="track-title">${esc(t.title)}</div>
+              <div class="track-sub">
+                ${esc(t.artist_name)} ${t.album_title ? '• ' + esc(t.album_title) : '• Single'}
+                ${t.genre ? `<span class="badge" style="margin-left:4px;">${esc(t.genre)}</span>` : ''}
+                • ${formatDuration(t.duration_sec)}
+              </div>
+            </div>
+          </div>
+          <div class="track-actions">
+            ${plOptions}
+            <button class="${likeClass}" onclick="toggleLike(${t.track_id})">${likeLabel}</button>
+            <button class="sm" onclick="playTrackByIndex(${idx})">▶ Play</button>
+          </div>
         `;
-
-        const btn = document.createElement('button');
-        btn.textContent = 'Play ▶';
-        btn.addEventListener('click', () => {
-          playTrack(s.file_path, s.title, s.cover_path);
-        });
-
-        div.appendChild(info);
-        div.appendChild(btn);
-        songList.appendChild(div);
+        container.appendChild(div);
       });
     }
 
-    function playTrack(filePath, title, coverPath) {
-      audioError.textContent = '';
-      player.src = filePath;
-      player.play().catch(err => {
-        audioError.textContent = 'Error playback: ' + err.message;
-      });
-      nowPlaying.textContent = `Memutar: ${title}`;
+    // ==================== 3. AUDIO PLAYER ====================
+    function playTrackByIndex(idx) {
+      if (idx < 0 || idx >= allTracks.length) return;
+      currentTrackIndex = idx;
+      const t = allTracks[idx];
 
-      if (coverPath) {
-        coverImg.src = coverPath;
-        coverImg.style.display = 'block';
+      document.getElementById('player-error').textContent = '';
+      document.getElementById('player-title').textContent = t.title;
+      document.getElementById('player-artist').textContent = `${t.artist_name}${t.album_title ? ' — ' + t.album_title : ''}`;
+
+      const coverEl = document.getElementById('player-cover');
+      if (t.cover_path) {
+        coverEl.src = t.cover_path;
+        coverEl.style.visibility = 'visible';
       } else {
-        coverImg.style.display = 'none';
+        coverEl.style.visibility = 'hidden';
+      }
+
+      audioEl.src = t.file_path;
+      audioEl.play().catch(err => {
+        document.getElementById('player-error').textContent = `Gagal memutar (${t.file_path}): ${err.message}`;
+      });
+      renderTracks();
+    }
+
+    function playNext() {
+      if (allTracks.length === 0) return;
+      const nextIdx = (currentTrackIndex + 1) % allTracks.length;
+      playTrackByIndex(nextIdx);
+    }
+
+    audioEl.addEventListener('ended', playNext);
+
+    // ==================== 4. LIKE TOGGLE ====================
+    async function toggleLike(trackId) {
+      const res = await fetch('api/like.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ track_id: trackId })
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(json.message);
+        await loadSongs();
+      } else {
+        showToast(json.message || 'Gagal memproses like', true);
       }
     }
 
-    checkMe();
+    // ==================== 5. PLAYLISTS ====================
+    async function loadPlaylists() {
+      const res = await fetch('api/playlists.php', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) return;
+
+      userPlaylists = json.data?.playlists || [];
+      document.getElementById('pl-count').textContent = userPlaylists.length;
+
+      const listEl = document.getElementById('playlist-list');
+      if (userPlaylists.length === 0) {
+        listEl.innerHTML = '<p style="color:var(--muted); font-size:0.84rem;">Belum ada playlist. Buat di atas!</p>';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      userPlaylists.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'pl-item' + (selectedPlaylistId === p.playlist_id ? ' selected' : '');
+        div.innerHTML = `
+          <span>🎵 ${esc(p.title)} <span style="color:var(--muted); font-size:0.78rem;">(${p.track_count || 0})</span></span>
+          <span style="font-size:0.75rem; color:var(--primary);">Buka ▸</span>
+        `;
+        div.onclick = () => openPlaylist(p.playlist_id, p.title);
+        listEl.appendChild(div);
+      });
+    }
+
+    async function createPlaylist(e) {
+      e.preventDefault();
+      const input = document.getElementById('new-pl-title');
+      const title = input.value.trim();
+      if (!title) return;
+
+      const res = await fetch('api/playlists.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title })
+      });
+      const json = await res.json();
+      if (json.success) {
+        input.value = '';
+        showToast(json.message);
+        await loadPlaylists();
+        renderTracks();
+      } else {
+        showToast(json.message || 'Gagal membuat playlist', true);
+      }
+    }
+
+    async function openPlaylist(playlistId, title) {
+      selectedPlaylistId = playlistId;
+      await loadPlaylists();
+
+      document.getElementById('playlist-detail').classList.remove('hidden');
+      document.getElementById('selected-pl-name').textContent = `Isi Playlist: ${title}`;
+
+      const res = await fetch(`api/playlists_tracks.php?playlist_id=${playlistId}`, { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) {
+        showToast(json.message || 'Gagal memuat isi playlist', true);
+        return;
+      }
+
+      const container = document.getElementById('playlist-tracks-list');
+      const items = json.data?.tracks || [];
+
+      if (items.length === 0) {
+        container.innerHTML = '<p style="color:var(--muted); font-size:0.82rem;">Playlist ini masih kosong.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      items.forEach((item, i) => {
+        const row = document.createElement('div');
+        row.className = 'pl-track-row';
+        row.innerHTML = `
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            #${item.position || (i + 1)} <strong>${esc(item.title)}</strong> - ${esc(item.artist_name)}
+          </span>
+          <button class="danger sm" onclick="removeFromPlaylist(${playlistId}, ${item.track_id})">Hapus</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    async function addTrackToPlaylist(selectEl, trackId) {
+      const playlistId = parseInt(selectEl.value);
+      selectEl.value = '';
+      if (!playlistId) return;
+
+      try {
+        const res = await fetch('api/playlists_tracks.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ playlist_id: playlistId, track_id: trackId })
+        });
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch (err) {
+          showToast('Error PHP: ' + text.slice(0, 120), true);
+          return;
+        }
+
+        if (json.success) {
+          showToast(json.message);
+          await loadPlaylists();
+          if (selectedPlaylistId === playlistId) {
+            const pl = userPlaylists.find(x => x.playlist_id === playlistId);
+            openPlaylist(playlistId, pl ? pl.title : '');
+          }
+        } else {
+          showToast(json.message || 'Gagal menambahkan lagu', true);
+        }
+      } catch (e) {
+        showToast('Network error: ' + e.message, true);
+      }
+    }
+
+    async function removeFromPlaylist(playlistId, trackId) {
+      const res = await fetch('api/playlists_tracks.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action: 'remove', playlist_id: playlistId, track_id: trackId })
+    });
+      const json = await res.json();
+      if (json.success) {
+        showToast(json.message);
+        await loadPlaylists();
+        const pl = userPlaylists.find(x => x.playlist_id === playlistId);
+        openPlaylist(playlistId, pl ? pl.title : '');
+      } else {
+        showToast(json.message || 'Gagal menghapus lagu', true);
+      }
+    }
+
+    // ==================== 6. UPLOAD LAGU ====================
+    async function uploadTrack(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-upload');
+      btn.disabled = true;
+      btn.textContent = 'Mengunggah...';
+
+      try {
+        const formData = new FormData(e.target);
+        const res = await fetch('api/upload.php', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message);
+          e.target.reset();
+          await loadPlaylists();
+          await loadSongs(true);
+        } else {
+          showToast(json.message || 'Upload gagal', true);
+        }
+      } catch (err) {
+        showToast('Terjadi kesalahan jaringan saat upload', true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Upload Lagu';
+      }
+    }
+
+    // Start
+    checkSession();
   </script>
 </body>
 </html>

@@ -2,154 +2,115 @@
 require_once __DIR__ . "/helpers.php";
 require_method("POST");
 
-$adminId = require_admin();
+$userId     = require_login();
+$title      = trim((string) ($_POST["title"] ?? ""));
+$artistName = trim((string) ($_POST["artist_name"] ?? ""));
+$albumTitle = trim((string) ($_POST["album_title"] ?? ""));
+$genre      = trim((string) ($_POST["genre"] ?? ""));
+$duration   = ($_POST["duration_sec"] ?? "") !== "" ? (int) $_POST["duration_sec"] : null;
 
-$title = clean_string($_POST["title"] ?? "");
-$artistId = filter_var($_POST["artist_id"] ?? null, FILTER_VALIDATE_INT);
-$albumRaw = $_POST["album_id"] ?? "";
-$albumId = ($albumRaw === "" || $albumRaw === null)
-    ? null
-    : filter_var($albumRaw, FILTER_VALIDATE_INT);
-$genre = clean_string($_POST["genre"] ?? "");
-$durationRaw = $_POST["duration_sec"] ?? "";
-$duration = ($durationRaw === "" || $durationRaw === null)
-    ? null
-    : filter_var($durationRaw, FILTER_VALIDATE_INT);
-
-if ($title === "" || mb_strlen($title) > 150) {
-    json_response(false, "Track title is required (maximum 150 characters)", null, 422);
+if ($title === "" || $artistName === "") {
+    json_response(false, "Judul Lagu dan Nama Artis Wajib Diisi", null, 422); // [CUSTOM MSG]
 }
-if (!$artistId || $artistId < 1) {
-    json_response(false, "A valid artist_id is required", null, 422);
-}
-if ($albumId !== null && (!$albumId || $albumId < 1)) {
-    json_response(false, "Invalid album_id", null, 422);
-}
-if ($duration !== null && ($duration === false || $duration < 0)) {
-    json_response(false, "Invalid duration_sec", null, 422);
-}
-if ($genre !== "" && mb_strlen($genre) > 50) {
-    json_response(false, "Genre must be at most 50 characters", null, 422);
-}
-
 if (!isset($_FILES["audio"]) || $_FILES["audio"]["error"] !== UPLOAD_ERR_OK) {
-    json_response(false, "An audio file is required", null, 422);
+    json_response(false, "File Audio Wajib dipiliD (Pastikan Ukuran Tidak Melebihi Batas 100mb)", null, 422); // [CUSTOM MSG]
 }
 
-$audioAllowed = [
-    "audio/mpeg" => "mp3",
-    "audio/wav" => "wav",
-    "audio/x-wav" => "wav",
-    "audio/ogg" => "ogg",
-    "audio/mp4" => "m4a",
-    "audio/aac" => "aac"
-];
-
-$coverAllowed = [
-    "image/jpeg" => "jpg",
-    "image/png" => "png",
-    "image/webp" => "webp"
-];
-
-$rootUploadDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . "uploads";
-$songDir = $rootUploadDir . DIRECTORY_SEPARATOR . "songs";
-$coverDir = $rootUploadDir . DIRECTORY_SEPARATOR . "covers";
-
-foreach ([$songDir, $coverDir] as $dir) {
-    if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
-        json_response(false, "Could not create upload directory", null, 500);
-    }
+$audioExt     = strtolower(pathinfo($_FILES["audio"]["name"], PATHINFO_EXTENSION));
+$allowedAudio = ["mp3", "flac", "wav", "ogg", "m4a", "aac"];
+if (!in_array($audioExt, $allowedAudio, true)) {
+    json_response(false, "Format Audio Tidak Didukung (.$audioExt). Gunakan MP3, FLAC, WAV, OGG, M4A, atau AAC", null, 415); // [CUSTOM MSG]
+}
+if ($_FILES["audio"]["size"] > 100 * 1024 * 1024) {
+    json_response(false, "Ukuran File Audio Maksimal 100mb", null, 413); // [CUSTOM MSG]
 }
 
-$finfo = new finfo(FILEINFO_MIME_TYPE);
-$audioMime = $finfo->file($_FILES["audio"]["tmp_name"]);
+$rootDir  = dirname(__DIR__) . DIRECTORY_SEPARATOR . "uploads";
+$songDir  = $rootDir . DIRECTORY_SEPARATOR . "songs";
+$coverDir = $rootDir . DIRECTORY_SEPARATOR . "covers";
+if (!is_dir($songDir)) mkdir($songDir, 0755, true);
+if (!is_dir($coverDir)) mkdir($coverDir, 0755, true);
 
-if (!isset($audioAllowed[$audioMime])) {
-    json_response(false, "Unsupported audio format. Use MP3, WAV, OGG, M4A, or AAC", null, 415);
-}
-if ($_FILES["audio"]["size"] > 32 * 1024 * 1024) {
-    json_response(false, "Audio file exceeds the 32 MB limit", null, 413);
-}
+$audioFileName = bin2hex(random_bytes(16)) . "." . $audioExt;
+$audioDest     = $songDir . DIRECTORY_SEPARATOR . $audioFileName;
+$audioPath     = "uploads/songs/" . $audioFileName;
 
-$audioName = bin2hex(random_bytes(16)) . "." . $audioAllowed[$audioMime];
-$audioDestination = $songDir . DIRECTORY_SEPARATOR . $audioName;
-$audioRelativePath = "uploads/songs/" . $audioName;
+$coverPath = null;
+$coverDest = null;
 
-$coverRelativePath = null;
-$coverDestination = null;
-
-if (isset($_FILES["cover"]) && $_FILES["cover"]["error"] !== UPLOAD_ERR_NO_FILE) {
-    if ($_FILES["cover"]["error"] !== UPLOAD_ERR_OK) {
-        json_response(false, "Cover upload failed", null, 422);
+if (isset($_FILES["cover"]) && $_FILES["cover"]["error"] === UPLOAD_ERR_OK) {
+    $coverExt = strtolower(pathinfo($_FILES["cover"]["name"], PATHINFO_EXTENSION));
+    if (!in_array($coverExt, ["jpg", "jpeg", "png", "webp"], true)) {
+        json_response(false, "Format Cover Harus JPG, PNG, atau WEBP", null, 415); // [CUSTOM MSG]
     }
-
-    $coverMime = $finfo->file($_FILES["cover"]["tmp_name"]);
-
-    if (!isset($coverAllowed[$coverMime])) {
-        json_response(false, "Cover must be JPG, PNG, or WEBP", null, 415);
+    if ($_FILES["cover"]["size"] > 10 * 1024 * 1024) {
+        json_response(false, "Ukuran Cover Maksimal 10mb", null, 413); // [CUSTOM MSG]
     }
-    if ($_FILES["cover"]["size"] > 5 * 1024 * 1024) {
-        json_response(false, "Cover image exceeds the 5 MB limit", null, 413);
-    }
-
-    $coverName = bin2hex(random_bytes(16)) . "." . $coverAllowed[$coverMime];
-    $coverDestination = $coverDir . DIRECTORY_SEPARATOR . $coverName;
-    $coverRelativePath = "uploads/covers/" . $coverName;
+    $coverFileName = bin2hex(random_bytes(16)) . "." . $coverExt;
+    $coverDest     = $coverDir . DIRECTORY_SEPARATOR . $coverFileName;
+    $coverPath     = "uploads/covers/" . $coverFileName;
 }
 
 try {
-    $artistCheck = $pdo->prepare("SELECT artist_id FROM artists WHERE artist_id = :id");
-    $artistCheck->execute(["id" => $artistId]);
-    if (!$artistCheck->fetch()) {
-        json_response(false, "Artist not found", null, 404);
+    $pdo->beginTransaction();
+
+    // Cari atau buat Artist otomatis
+    $stmtAr = $pdo->prepare("SELECT artist_id FROM artists WHERE name = :name LIMIT 1");
+    $stmtAr->execute(["name" => $artistName]);
+    $artist = $stmtAr->fetch();
+    if ($artist) {
+        $artistId = (int) $artist["artist_id"];
+    } else {
+        $insAr = $pdo->prepare("INSERT INTO artists (name) VALUES (:name)");
+        $insAr->execute(["name" => $artistName]);
+        $artistId = (int) $pdo->lastInsertId();
     }
 
-    if ($albumId !== null) {
-        $albumCheck = $pdo->prepare("SELECT album_id FROM albums WHERE album_id = :id");
-        $albumCheck->execute(["id" => $albumId]);
-        if (!$albumCheck->fetch()) {
-            json_response(false, "Album not found", null, 404);
+    // Cari atau buat Album otomatis (jika diisi)
+    $albumId = null;
+    if ($albumTitle !== "") {
+        $stmtAl = $pdo->prepare("SELECT album_id FROM albums WHERE title = :title AND artist_id = :aid LIMIT 1");
+        $stmtAl->execute(["title" => $albumTitle, "aid" => $artistId]);
+        $album = $stmtAl->fetch();
+        if ($album) {
+            $albumId = (int) $album["album_id"];
+        } else {
+            $insAl = $pdo->prepare("INSERT INTO albums (title, artist_id, cover_path) VALUES (:title, :aid, :cp)");
+            $insAl->execute(["title" => $albumTitle, "aid" => $artistId, "cp" => $coverPath]);
+            $albumId = (int) $pdo->lastInsertId();
         }
     }
 
-    if (!move_uploaded_file($_FILES["audio"]["tmp_name"], $audioDestination)) {
-        json_response(false, "Could not save audio file", null, 500);
+    if (!move_uploaded_file($_FILES["audio"]["tmp_name"], $audioDest)) {
+        throw new Exception("Gagal Menyimpan File Audio Ke Server"); // [CUSTOM MSG]
+    }
+    if ($coverDest && !move_uploaded_file($_FILES["cover"]["tmp_name"], $coverDest)) {
+        throw new Exception("Gagal Menyimpan Gambar Cover Ke Server"); // [CUSTOM MSG]
     }
 
-    if ($coverDestination !== null &&
-        !move_uploaded_file($_FILES["cover"]["tmp_name"], $coverDestination)) {
-        @unlink($audioDestination);
-        json_response(false, "Could not save cover image", null, 500);
-    }
-
-    $stmt = $pdo->prepare("
-        INSERT INTO tracks
-            (title, artist_id, album_id, uploader_id, genre, file_path, cover_path, duration_sec)
-        VALUES
-            (:title, :artist_id, :album_id, :uploader_id, :genre, :file_path, :cover_path, :duration_sec)
+    $stmtTr = $pdo->prepare("
+        INSERT INTO tracks (title, artist_id, album_id, uploader_id, genre, file_path, cover_path, duration_sec)
+        VALUES (:title, :aid, :alid, :uid, :genre, :fp, :cp, :dur)
     ");
-
-    $stmt->execute([
+    $stmtTr->execute([
         "title" => $title,
-        "artist_id" => $artistId,
-        "album_id" => $albumId,
-        "uploader_id" => $adminId,
+        "aid"   => $artistId,
+        "alid"  => $albumId,
+        "uid"   => $userId,
         "genre" => $genre !== "" ? $genre : null,
-        "file_path" => $audioRelativePath,
-        "cover_path" => $coverRelativePath,
-        "duration_sec" => $duration
+        "fp"    => $audioPath,
+        "cp"    => $coverPath,
+        "dur"   => $duration
     ]);
 
-    json_response(true, "Track uploaded successfully", [
-        "track_id" => (int) $pdo->lastInsertId(),
-        "title" => $title,
-        "file_path" => $audioRelativePath,
-        "cover_path" => $coverRelativePath
+    $pdo->commit();
+    json_response(true, "Lagu Berhasil Diunggah Ke TUNYX!", [ // [CUSTOM MSG]
+        "track_id" => (int) $pdo->lastInsertId()
     ], 201);
 
-} catch (PDOException $e) {
-    if (isset($audioDestination) && is_file($audioDestination)) @unlink($audioDestination);
-    if ($coverDestination !== null && is_file($coverDestination)) @unlink($coverDestination);
-
-    json_response(false, "Track upload failed", null, 500);
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    if (is_file($audioDest)) @unlink($audioDest);
+    if ($coverDest && is_file($coverDest)) @unlink($coverDest);
+    json_response(false, "Upload Gagal T^T: " . $e->getMessage(), null, 500); // [CUSTOM MSG]
 }

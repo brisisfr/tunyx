@@ -1,0 +1,36 @@
+/* List layout shared by Playlist / Liked / My Uploads. Measured from "Main_Playlist" 792x796:
+   header 728x284 with the cover 200x200 at (42,42) and the text column 62 right of it,
+   four 48px buttons 80 apart, track/header, then rows 56 tall every 60. */
+
+#view .pl-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 62px;
+  padding: 42px;
+}
+
+#view .pl-head .tr-cover { width: 200px; height: 200px; }
+#view .pl-head .tr-cover .icon { width: 40px; height: 40px; }
+
+#view .pl-meta { min-width: 0; }
+#view .pl-title { margin: 0; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#view .pl-owner { margin: 34px 0 0; color: var(--text-sec); }
+#view .pl-stats { display: flex; flex-direction: column; gap: 13px; margin-top: 52px; color: var(--text-sec); }
+
+/* action row: transparent 48px buttons, centres 80 apart (48 + 32) */
+#view .pl-actions { display: flex; gap: 32px; margin: 8px 0; padding-left: 42px; }
+#view .pl-act {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-sec);
+  cursor: pointer;
+}
+#view .pl-act:hover:not(:disabled) { color: var(--text-main); }
+#view .pl-act:disabled { cursor: default; }
+
+#view .pl-list { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-8); }

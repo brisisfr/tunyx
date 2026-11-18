@@ -1,0 +1,24 @@
+/* Home, measured from "Chome_Main" 1316x796 (Deepseek Batch 1).
+   Section title x42 (10 inset) baseline 134.8; rows 280x56, 3 columns 30 apart, 10 apart vertically;
+   section 2 starts 68 below the last row; cards 220 wide, 16 apart, 20 below the title. */
+
+#view .view-home .hm-title { margin: 8px 0 0 10px; }
+
+#view .view-home .hm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 280px);
+  gap: 10px 30px;                    /* Figma measures 30, not a spacing token */
+  margin-top: 32px;
+}
+
+#view .view-home .hm-sec + .hm-sec { margin-top: 68px; }
+
+#view .view-home .hm-cards {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+  padding-bottom: var(--space-4);
+  overflow-x: auto;
+}
+
+#view .view-home .empty { margin: 24px 0 0 10px; }

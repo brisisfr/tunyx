@@ -1,0 +1,6 @@
+/* Now Playing stub (Figma Playing 28:163): NOW PLAYING label, Sora 32 title, Inter 14 artist.
+   The real screen + visualizer stage is Claude's; these three rules go away with the stub. */
+
+#view .view-playing .np-label { margin: 8px 0 0 10px; color: var(--text-sec); }
+#view .view-playing .np-title { margin: 16px 0 0 10px; }
+#view .view-playing .np-artist { margin: var(--space-8) 0 0 10px; color: var(--text-sec); }

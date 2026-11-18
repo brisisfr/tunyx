@@ -1,0 +1,15 @@
+/* Library, measured from "Main_Library" 1164x796 (Deepseek Batch 1): two sections of 3-column
+   compact rows, same 280/30/10 grid as Home, 68 between the sections. */
+
+#view .view-library .lb-title { margin: 8px 0 0 10px; }
+
+#view .view-library .lb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 280px);
+  gap: 10px 30px;
+  margin-top: 32px;
+}
+
+#view .view-library .lb-sec + .lb-sec { margin-top: 68px; }
+
+#view .view-library .empty { margin: 24px 0 0 10px; }

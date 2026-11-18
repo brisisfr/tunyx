@@ -1,0 +1,21 @@
+/* Explorer, measured from "Main" 1171x797 (Deepseek Batch 1): banner 1000x300 at a 10px inset,
+   radius 16; "Explore Songs" title 40 below the banner; cards 220 wide, 16 apart, in a scroller. */
+
+#view .view-explore .ex-banner {
+  height: 300px;
+  margin: 10px 10px 0;
+  border-radius: var(--radius-16);
+  background: var(--bg-elevated) url(../img/explore-banner.jpg) center / cover no-repeat;
+}
+
+#view .view-explore .ex-title { margin: 40px 0 0 10px; }
+
+#view .view-explore .ex-cards {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0 0 18px;
+  padding-bottom: var(--space-4);
+  overflow-x: auto;
+}
+
+#view .view-explore .empty { margin: 24px 0 0 18px; }

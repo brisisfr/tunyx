@@ -1,0 +1,154 @@
+/* Top bar. Measured from "Search_bar_Extras" 1100x48 and "Search Extended" 900x288 (Deepseek Batch 1).
+   Search fills the row: radius 12, bg/elevated, icon 18 at x15, placeholder x48. Cluster right: avatar 40,
+   upload 48x48, logo 68 (overflows the 48 row by 10 top/bottom). Profile menu 382x198. */
+
+#topbar .tb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 48px;
+}
+
+/* ---- search + dropdown: the dropdown is one rounded panel that starts behind the input ---- */
+#topbar .tb-search { position: relative; flex: 1; min-width: 0; height: 48px; }
+
+#topbar .tb-input {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 48px;
+  padding: 0 16px 0 48px;
+  border: 0;
+  border-radius: var(--radius-12);
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  font: 400 14px/20px var(--font-body);
+  outline: none;
+}
+#topbar .tb-input::placeholder { color: var(--text-sec); }
+#topbar .tb-input:focus { box-shadow: 0 0 0 1px var(--brand-lavender); }
+
+#topbar .tb-search-icon {
+  position: absolute;
+  left: 15px;
+  top: 15px;
+  z-index: 3;
+  display: grid;
+  color: var(--text-sec);
+  pointer-events: none;
+}
+
+#topbar .tb-drop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding-top: 48px;
+  border-radius: var(--radius-12);
+  background: var(--bg-elevated);
+}
+
+#topbar .tb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  height: 48px;
+  padding: 0 16px 0 48px;
+  border: 0;
+  background: none;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+}
+#topbar .tb-row:hover { background: var(--bg-base); }
+#topbar .tb-row-title,
+#topbar .tb-row-artist { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#topbar .tb-row-artist { color: var(--text-sec); }
+#topbar .tb-row-none { color: var(--text-sec); cursor: default; }
+#topbar .tb-row-none:hover { background: none; }
+
+/* ---- avatar / upload / logo ---- */
+#topbar .tb-cluster { display: flex; align-items: center; gap: 10px; flex: none; }
+
+#topbar .tb-profile { position: relative; display: flex; }
+
+#topbar .tb-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--brand-lavender);
+  font: 500 16px/1 var(--font-body);
+  cursor: pointer;
+}
+#topbar .tb-avatar:hover { color: var(--text-main); }
+
+#topbar .tb-upload {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: var(--radius-12);
+  background: var(--bg-elevated);
+  color: var(--text-sec);
+  cursor: pointer;
+}
+#topbar .tb-upload:hover { color: var(--text-main); }
+
+/* 68x68, vertically centred on the 48 row -> overflows 10px top and bottom */
+#topbar .tb-logo {
+  flex: none;
+  width: 68px;
+  height: 68px;
+  margin: -10px 0;
+  background: url(../img/logo.png) center / contain no-repeat;
+}
+
+/* ---- profile menu (Figma "Modals_ Profile") ---- */
+#topbar .tb-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 382px;
+  padding: 11px;
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius-12);
+  background: var(--bg-base);
+}
+#topbar .tb-mi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-12);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font: 500 14px/20px var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+#topbar .tb-mi:hover { background: var(--bg-elevated); }
+#topbar .tb-mi-icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: var(--radius-12); color: var(--text-sec); }
+#topbar .tb-mi-head { cursor: default; background: var(--bg-elevated); }
+#topbar .tb-mi-head:hover { background: var(--bg-elevated); }
+#topbar .tb-mi-head .tb-mi-icon { color: var(--brand-lavender); filter: drop-shadow(0 0 8px var(--brand-lavender)); }
+#topbar .tb-mi-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* `hidden` must beat the display rules above */
+#topbar .tb-drop[hidden],
+#topbar .tb-menu[hidden] { display: none; }

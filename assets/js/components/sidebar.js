@@ -1,0 +1,95 @@
+// Sidebar (Sidebar_L). Mounted by main.js: mountSidebar(document.getElementById('sidebar')).
+// Visuals live in assets/css/sidebar.css. Expanded vs collapsed is pure CSS via #app[data-sidebar],
+// which main.js applyLayout() owns (it also forces collapsed under 1100px).
+// Figma: Sidebar_L 3:69 (expanded), 55:3130 (collapsed), nav variants 9:226, Playlist 55:5125.
+
+import { store } from '../store.js';
+import { icon } from '../icons.js';
+
+const NAV = [
+  { href: '#/home',    icon: 'home',    label: 'Home',     match: ['home'] },
+  { href: '#/explore', icon: 'compass', label: 'Explorer', match: ['explore'] },
+  { href: '#/library', icon: 'library', label: 'Library',  match: ['library', 'liked', 'uploads'] },
+];
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+function navHTML() {
+  return NAV.map((n) => `
+    <a class="sb-nav-item text-body-strong" href="${n.href}" data-match="${n.match.join(',')}" title="${n.label}">
+      ${icon(n.icon, 24)}<span class="sb-label">${n.label}</span>
+    </a>`).join('');
+}
+
+function rowsHTML(playlists) {
+  return playlists.map((p) => `
+    <a class="sb-pl" href="#/playlist/${encodeURIComponent(p.playlist_id)}" data-playlist-id="${esc(p.playlist_id)}" title="${esc(p.title)}">
+      <span class="sb-pl-cover"></span>
+      <span class="sb-pl-text">
+        <span class="sb-pl-title text-body-strong">${esc(p.title)}</span>
+        <span class="sb-pl-sub text-caption">Playlist</span>
+      </span>
+    </a>`).join('');
+}
+
+export function mountSidebar(el) {
+  el.innerHTML = `
+    <div class="sb-header">
+      <button class="sb-brand" type="button" data-sb-toggle aria-label="Toggle sidebar">
+        ${icon('list', 24)}<span class="sb-label sb-wordmark text-title">TUNYX</span>
+      </button>
+    </div>
+    <nav class="sb-nav" aria-label="Main">${navHTML()}</nav>
+    <div class="sb-divider" role="separator"></div>
+    <div class="sb-list">
+      <button class="sb-pl sb-pl-new" type="button" data-sb-new>
+        <span class="sb-pl-cover"></span>
+        <span class="sb-pl-text">
+          <span class="sb-pl-title text-body-strong">New Playlist</span>
+          <span class="sb-pl-sub text-caption"></span>
+        </span>
+      </button>
+      <div class="sb-rows" data-sb-rows></div>
+    </div>`;
+
+  const rowsEl = el.querySelector('[data-sb-rows]');
+
+  function updateActive() {
+    const route = store.get('route') || {};
+    el.querySelectorAll('.sb-nav-item').forEach((a) => {
+      const on = a.dataset.match.split(',').includes(route.name);
+      a.classList.toggle('is-active', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    const pid = route.name === 'playlist' ? String((route.params || [])[0]) : null;
+    el.querySelectorAll('.sb-pl[data-playlist-id]').forEach((a) => {
+      const on = pid !== null && a.dataset.playlistId === pid;
+      a.classList.toggle('is-active', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+  }
+
+  function renderPlaylists() {
+    rowsEl.innerHTML = rowsHTML(store.get('playlists') || []);
+    updateActive();
+  }
+
+  // Collapse toggle: main.js applyLayout() subscribes to this key and updates #app[data-sidebar].
+  el.querySelector('[data-sb-toggle]').addEventListener('click', () => {
+    store.set('sidebarCollapsed', !store.get('sidebarCollapsed'));
+  });
+
+  // New Playlist modal isn't designed yet. The modals step will listen for this event.
+  el.querySelector('[data-sb-new]').addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('tunyx:new-playlist'));
+  });
+
+  store.on('playlists', renderPlaylists);
+  store.on('route', updateActive);
+
+  renderPlaylists();
+}

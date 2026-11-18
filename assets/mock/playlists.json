@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "message": "",
+  "data": [
+    {
+      "playlist_id": 1,
+      "title": "Personal FAV",
+      "created_at": "2026-11-13 09:00:00",
+      "track_count": 2
+    },
+    {
+      "playlist_id": 2,
+      "title": "ISI AJA NGAB",
+      "created_at": "2026-11-12 09:00:00",
+      "track_count": 2
+    }
+  ]
+}

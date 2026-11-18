@@ -1,0 +1,104 @@
+/* Tunyx app shell: grid + container surfaces only. No component styles.
+   Source: Figma "Tunyx Web Design", frames Home 2:25 / CHome 55:3128 / Playing 28:163,
+   container nodes Sidebar_L 3:69, Main 28:172, Sidebar_R 28:219, Player_Bar 28:230.
+   Layout state comes from main.js: #app[data-sidebar=expanded|collapsed], #app[data-panel=open|closed]. */
+
+#app {
+  --sidebar-w: 240px;   /* Sidebar_L expanded (Home) */
+  --panel-w: 360px;     /* Sidebar_R (Playing / Playlist) */
+  --playerbar-h: 80px;  /* Player_Bar */
+
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg-base);
+}
+
+#app[data-sidebar="collapsed"] {
+  --sidebar-w: 88px;    /* Sidebar_L collapsed (CHome) */
+}
+
+/* BODY: 12px padding and 12px gap between sidebar | main | panel */
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  gap: var(--space-12);
+  padding: var(--space-12);
+}
+
+#app[data-panel="open"] .app-body {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--panel-w);
+}
+
+/* Sidebar_L: surface, radius 16, padding 12, column with gap 8 */
+#sidebar {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-12);
+  background: var(--bg-surface);
+  border-radius: var(--radius-16);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Main: surface, radius 16, padding 32, column with gap 24 (top bar, then view) */
+.main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--space-32);
+  background: var(--bg-surface);
+  border-radius: var(--radius-16);
+  overflow: hidden;
+}
+
+/* Top bar row (search + profile) is 48px tall in Figma */
+#topbar {
+  flex: none;
+  min-height: 48px;
+}
+
+/* View area: fills the rest of Main and scrolls. Router renders into it. */
+#view {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Sidebar_R (Up next): surface, radius 16, padding 16, column with gap 24. Hidden when closed. */
+#panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--space-16);
+  background: var(--bg-surface);
+  border-radius: var(--radius-16);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#app[data-panel="closed"] #panel {
+  display: none;
+}
+
+/* Player_Bar: full width, surface, padding 12 24, 80px tall, no radius */
+#playerbar {
+  flex: none;
+  height: var(--playerbar-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-24);
+  padding: var(--space-12) var(--space-24);
+  background: var(--bg-surface);
+}

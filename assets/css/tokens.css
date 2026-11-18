@@ -1,0 +1,84 @@
+/* Tunyx design tokens
+   Source: Figma file "Tunyx Web Design" (Eu1VcFKwZpahjvte3SDQEq), read via MCP on 2026-11-16.
+   Figma variable names map 1:1, slash becomes dash (bg/surface -> --bg-surface).
+   Do not hand-tune values here; change them in Figma first, then re-sync. */
+
+:root {
+  /* Color: from Figma variables */
+  --bg-base: #151321;
+  --bg-surface: #211d35;
+  --bg-elevated: #2d2641;
+  --text-main: #e8e3f5;
+  --text-sec: #a79bb8;
+  --brand-lavender: #bc74e2;
+
+  /* Spacing */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+
+  /* Radius */
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+
+  /* Effects: glow/soft = drop shadow, lavender, offset 0 0, blur 16, spread 0 */
+  --glow-soft: 0 0 16px var(--brand-lavender);
+
+  /* Fonts */
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  /* NOT Figma variables: kept for the visualizer (hex from visualizer-spec.md).
+     Not found as variables in Home / Explorer / Playlist / Playing / nav. */
+  --brand-indigo: #a493f0;
+  --brand-azure: #55c9d8;
+  --vis-bar-dim: #6e6794;
+}
+
+/* Text styles: from Figma text styles (family, weight, size / line-height, tracking) */
+.text-display {      /* Sora Bold 32/40 */
+  font: 700 32px/40px var(--font-display);
+}
+.text-title {        /* Sora SemiBold 20/28 */
+  font: 600 20px/28px var(--font-display);
+}
+.text-body {         /* Inter Regular 14/20 */
+  font: 400 14px/20px var(--font-body);
+}
+.text-body-strong {  /* Inter Medium 14/20 */
+  font: 500 14px/20px var(--font-body);
+}
+.text-caption {      /* Inter Regular 12/16 */
+  font: 400 12px/16px var(--font-body);
+}
+.text-label-upper {  /* Inter SemiBold 11/16, tracking -6% (as in Figma; see debrief) */
+  font: 600 11px/16px var(--font-body);
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+/* Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-main);
+  font: 400 14px/20px var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}

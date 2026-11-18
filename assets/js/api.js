@@ -36,7 +36,6 @@ const qs = (params) => {
 };
 const get = (path, params, o) => request(path + qs(params), o);
 const postJson = (path, body, o) => request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body ?? {}), ...o });
-const del = (path, fields) => request(path, { method: 'DELETE', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(fields).toString() });
 
 // ---- one track shape for the whole app ----
 const trackCache = new Map();
@@ -56,31 +55,45 @@ export function normalizeTrack(t) {
   return n;
 }
 export const getTrack = (id) => trackCache.get(Number(id));
-// songs.php returns {tracks:[…]}, but like.php / playlist_tracks.php return bare arrays. Handle both.
-const tracksOf = (d) => (Array.isArray(d) ? d : d?.tracks ?? []).map(normalizeTrack);
+// songs.php / playlists_tracks.php / history.php wrap tracks ({tracks:[…]}, {history:[…]}); accept bare arrays too.
+const tracksOf = (d) => (Array.isArray(d) ? d : d?.tracks ?? d?.history ?? []).map(normalizeTrack);
+// me.php and login.php nest the user ({user:{…}}); mock mode returns it bare.
+const userOf = (d) => d?.user ?? d;
+
+const pt = (playlist_id) => `api/playlists_tracks.php?playlist_id=${encodeURIComponent(playlist_id)}`;
 
 export const api = {
   // auth
-  me: (o) => get('api/me.php', null, o),
-  login: (identity, password) => postJson('api/login.php', { identity, password }, { silent401: true }),
-  register: (username, email, password) => postJson('api/register.php', { username, email, password }),
+  me: async (o) => userOf(await get('api/me.php', null, o)),
+  login: async (identifier, password) => userOf(await postJson('api/login.php', { identifier, password }, { silent401: true })),
+  // register does not start a session, so log in right after (identifier = the username just created)
+  register: async (username, email, password) => {
+    await postJson('api/register.php', { username, email, password });
+    return api.login(username, password);
+  },
   logout: () => postJson('api/logout.php'),
 
-  // songs
-  getTracks: async ({ q, genre, limit = 50, offset = 0 } = {}) => tracksOf(await get('api/songs.php', { q, genre, limit, offset })),
+  // songs (no paging any more; q matches title + artist, genre is exact, liked:1 = only my liked)
+  getTracks: async ({ q, genre, liked } = {}) => tracksOf(await get('api/songs.php', { q, genre, liked: liked ? 1 : '' })),
 
-  // likes
-  getLiked: async () => tracksOf(await get('api/like.php')),
+  // likes (like.php is POST-only; the liked list comes from songs.php?liked=1)
+  getLiked: () => api.getTracks({ liked: true }),
   toggleLike: (track_id) => postJson('api/like.php', { track_id }),
 
   // playlists
-  getPlaylists: async () => (await get('api/playlists.php')) ?? [],
-  createPlaylist: (title) => postJson('api/playlists.php', { title }),
-  getPlaylistTracks: async (playlist_id) => tracksOf(await get('api/playlist_tracks.php', { playlist_id })),
-  // NOTE: playlist_id goes in the QUERY STRING for add/remove (the API ignores it in a JSON body)
-  addToPlaylist: (playlist_id, track_id) => postJson(`api/playlist_tracks.php?playlist_id=${encodeURIComponent(playlist_id)}`, { track_id }),
-  removeFromPlaylist: (playlist_id, track_id) => del(`api/playlist_tracks.php?playlist_id=${encodeURIComponent(playlist_id)}`, { track_id }),
+  getPlaylists: async () => (await get('api/playlists.php'))?.playlists ?? [],
+  createPlaylist: async (title) => ({ ...(await postJson('api/playlists.php', { title })), title }),
+  // playlists_tracks.php (plural): playlist_id in the query string, JSON bodies, no reorder.
+  // If the DB team keeps the singular playlist_tracks.php instead, only these three lines change.
+  getPlaylistTracks: async (playlist_id) => tracksOf(await get('api/playlists_tracks.php', { playlist_id })),
+  addToPlaylist: (playlist_id, track_id) => postJson(pt(playlist_id), { track_id }),
+  removeFromPlaylist: (playlist_id, track_id) => postJson(pt(playlist_id), { action: 'remove', track_id }),
 
-  // upload (multipart; admin-only for now -> 403)
+  // history (newest first, NOT de-duplicated; history.js dedupes)
+  getHistory: async (limit = 30) => tracksOf(await get('api/history.php', { limit })),
+  recordPlay: (track_id) => postJson('api/history.php', { track_id }),
+  clearHistory: () => postJson('api/history.php', { action: 'clear' }),
+
+  // upload (multipart: title, artist_name, album_title?, genre?, duration_sec?, audio, cover?)
   upload: (formData) => request('api/upload.php', { method: 'POST', body: formData }),
 };

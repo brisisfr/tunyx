@@ -1,17 +1,22 @@
-// Listening history. Lives in localStorage for now (per user) because there is no play_history endpoint yet.
-// When the DB team ships one, only this file changes: recordPlay() POSTs, getHistory() GETs.
-import { store } from './store.js';
+// Listening history, stored server-side (api/history.php, per logged-in user).
+// recordPlay is fire-and-forget (player.js calls it when playback actually starts);
+// getHistory returns the most recent DISTINCT tracks (the API returns one row per play).
+import { api } from './api.js';
 
-const key = () => `tunyx_history_${store.get('user')?.user_id ?? 'anon'}`;
-
-export function getHistory(n = 9) {
-  try { return JSON.parse(localStorage.getItem(key()) || '[]').slice(0, n); } catch { return []; }
+export async function getHistory(n = 9) {
+  const rows = await api.getHistory(30);
+  const seen = new Set();
+  const out = [];
+  for (const t of rows) {
+    if (seen.has(t.track_id)) continue;
+    seen.add(t.track_id);
+    out.push(t);
+    if (out.length >= n) break;
+  }
+  return out;
 }
 
 export function recordPlay(track) {
-  try {
-    const list = getHistory(50).filter((t) => t.track_id !== track.track_id);
-    list.unshift(track);
-    localStorage.setItem(key(), JSON.stringify(list.slice(0, 50)));
-  } catch { /* storage unavailable: history just won't persist */ }
+  // a failed history write must never interrupt playback (and a 401 is handled by the login modal)
+  api.recordPlay(track.track_id).catch(() => {});
 }

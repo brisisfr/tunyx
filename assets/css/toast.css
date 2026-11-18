@@ -1,0 +1,35 @@
+/* Toast. Figma Toasts_alert: 245x62, radius 16, bg/base, icon box 25 at x18, text at x68. */
+#toasts {
+  position: fixed;
+  right: var(--space-24);
+  bottom: 104px;               /* above the 80px player bar + 12 padding + gap */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: 245px;
+  max-width: 340px;
+  min-height: 62px;
+  padding: 0 var(--space-16) 0 18px;
+  background: var(--bg-base);
+  border-radius: var(--radius-16);
+  color: var(--text-sec);
+  cursor: pointer;
+  animation: toast-in .2s ease-out;
+}
+.toast.is-leaving { opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; }
+.toast-icon { flex: none; display: grid; place-items: center; width: 25px; height: 25px; }
+.toast-icon .icon { width: 25px; height: 25px; }
+.toast-text { display: flex; flex-direction: column; min-width: 0; padding: var(--space-8) 0; }
+.toast-title { font: 500 14px/20px var(--font-body); color: var(--text-main); }
+.toast-msg { font: 400 12px/16px var(--font-body); color: var(--text-sec); overflow-wrap: anywhere; }
+.toast-liked .toast-icon { color: var(--like); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }

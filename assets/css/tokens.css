@@ -28,6 +28,9 @@
   /* Effects: glow/soft = drop shadow, lavender, offset 0 0, blur 16, spread 0 */
   --glow-soft: 0 0 16px var(--brand-lavender);
 
+  /* Liked heart (from the track row Figma export; no Figma variable yet) */
+  --like: #ff6b8a;
+
   /* Fonts */
   --font-display: "Sora", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;

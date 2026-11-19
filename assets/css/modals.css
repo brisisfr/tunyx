@@ -1,0 +1,75 @@
+/* Modals + states. Figma: Sign-in/Create 458 wide, bg/base radius 12; Simplebox 200x40 rows; Loading hourglass; Empty. */
+.md-backdrop {
+  position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: var(--space-16);
+  background: rgba(21, 19, 33, .72); backdrop-filter: blur(4px);
+}
+.md {
+  --md-line: #5f5a78;
+  position: relative; width: 458px; max-width: 100%; max-height: 100%; overflow: auto;
+  padding: 72px 36px 32px; background: var(--bg-base); border-radius: var(--radius-12);
+  box-shadow: 0 0 0 1px var(--bg-elevated), 0 24px 64px rgba(0, 0, 0, .5);
+}
+.md-x { position: absolute; top: 38px; right: 38px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--text-sec); cursor: pointer; }
+.md-x:hover { color: var(--text-main); }
+.md-title { margin: 0 0 40px; text-align: center; font: 700 32px/40px var(--font-display); color: var(--text-main); }
+.md-title-left { text-align: left; margin: -32px 0 24px; font: 600 20px/28px var(--font-display); color: var(--brand-indigo); text-shadow: var(--glow-soft); }
+.md-title-sm { margin: 16px 0 8px; font: 600 20px/28px var(--font-display); }
+
+.md-form { display: flex; flex-direction: column; gap: var(--space-8); }
+.md-field { display: flex; align-items: center; gap: var(--space-16); height: 56px; padding: 0 var(--space-16); background: var(--bg-surface); border-radius: var(--radius-12); color: var(--text-sec); }
+.md-field .icon { flex: none; }
+.md-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--text-main); font: 400 12px/16px var(--font-body); }
+.md-field:focus-within { box-shadow: inset 0 0 0 1px var(--brand-lavender); }
+::placeholder { color: var(--text-sec); opacity: 1; }
+.md-primary {
+  align-self: center; margin-top: var(--space-24); width: 126px; height: 36px; border: 0; border-radius: var(--radius-12);
+  background: var(--bg-surface); color: var(--brand-indigo); font: 600 20px/28px var(--font-display); cursor: pointer;
+}
+.md-primary:hover:not(:disabled) { box-shadow: var(--glow-soft); }
+.md-primary:disabled, .md-submit:disabled { opacity: .5; cursor: default; }
+.md-line { margin: var(--space-16) 8px 0; border: 0; border-top: 1px solid var(--md-line); }
+.md-error { margin: var(--space-16) 0 0; text-align: center; color: var(--like); font: 600 11px/16px var(--font-body); letter-spacing: -0.06em; }
+.md-switch { margin: var(--space-24) 0 0; text-align: center; color: var(--text-sec); font: 400 12px/16px var(--font-body); }
+.md-switch a { color: var(--brand-lavender); text-decoration: underline; }
+
+/* upload */
+.md-form-upload { gap: var(--space-12); }
+.md-input { width: 100%; height: 44px; padding: 0 var(--space-12); border: 0; outline: 0; border-radius: var(--radius-12); background: var(--bg-surface); color: var(--text-main); font: 500 14px/20px var(--font-body); }
+.md-input::placeholder { color: var(--md-line); }
+.md-input:focus { box-shadow: inset 0 0 0 1px var(--brand-lavender); }
+select.md-input { appearance: none; color: var(--text-main); }
+.md-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-12); }
+.md-file { display: flex; align-items: center; height: 44px; padding: 0 var(--space-12); border-radius: var(--radius-12); background: var(--bg-surface); color: var(--md-line); font: 500 14px/20px var(--font-body); cursor: pointer; overflow: hidden; }
+.md-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-file:hover { box-shadow: inset 0 0 0 1px var(--bg-elevated); }
+.md-file.is-set { color: var(--text-main); }
+.md-bar { height: 4px; border-radius: 2px; background: var(--bg-elevated); overflow: hidden; }
+.md-bar span { display: block; width: 40%; height: 100%; background: var(--brand-lavender); border-radius: 2px; animation: md-slide 1s ease-in-out infinite alternate; }
+@keyframes md-slide { from { transform: translateX(-10%); } to { transform: translateX(150%); } }
+.md-submit { height: 44px; margin-top: var(--space-8); border: 0; border-radius: var(--radius-12); background: var(--bg-elevated); color: var(--text-main); font: 500 14px/20px var(--font-body); cursor: pointer; }
+.md-submit:hover:not(:disabled) { box-shadow: var(--glow-soft); }
+
+/* confirm delete */
+.md-trash { display: grid; place-items: center; margin-top: 8px; color: var(--like); }
+.md-sub { margin: 0; text-align: center; color: var(--text-sec); font: 400 12px/16px var(--font-body); }
+.md-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); margin-top: var(--space-32); }
+.md-btn { height: 40px; border: 0; border-radius: var(--radius-12); background: var(--bg-surface); color: var(--text-sec); font: 400 12px/16px var(--font-body); cursor: pointer; }
+.md-btn:hover { color: var(--text-main); }
+.md-btn.md-danger { color: var(--like); }
+
+/* simplebox */
+.sbox { position: fixed; z-index: 950; width: 200px; overflow: hidden; background: var(--bg-base); border-radius: var(--radius-12); box-shadow: 0 0 0 1px var(--bg-elevated), 0 12px 32px rgba(0, 0, 0, .5); }
+.sbox-item { display: block; width: 100%; height: 40px; padding: 0 13px; border: 0; background: none; text-align: left; color: var(--text-sec); font: 500 14px/20px var(--font-body); cursor: pointer; }
+.sbox-item:hover, .sbox-item:focus-visible { background: var(--bg-elevated); color: var(--text-main); outline: 0; }
+.sbox-item.is-danger { color: var(--like); }
+
+/* states: Loading (hourglass 80, stroke #5F5A78) and Empty (centered text) */
+.loading { display: grid; place-items: center; min-height: 320px; height: 100%; color: #5f5a78; }
+.loading .icon { animation: md-flip 2s ease-in-out infinite; }
+@keyframes md-flip { 0%, 40% { transform: rotate(0); } 60%, 100% { transform: rotate(180deg); } }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-16); min-height: 320px; height: 100%; text-align: center; color: var(--text-sec); }
+.empty.compact { min-height: 0; padding: var(--space-32) 0; }
+.empty h3 { margin: 0; font: 600 20px/28px var(--font-display); color: var(--text-main); }
+.empty p { margin: 4px 0 0; font: 400 12px/16px var(--font-body); }
+.empty .btn { padding: 8px 16px; border: 0; border-radius: var(--radius-12); background: var(--bg-elevated); color: var(--text-main); cursor: pointer; text-decoration: none; }
+@media (prefers-reduced-motion: reduce) { .loading .icon, .md-bar span { animation: none; } }

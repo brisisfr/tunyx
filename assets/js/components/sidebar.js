@@ -4,7 +4,9 @@
 // Figma: Sidebar_L 3:69 (expanded), 55:3130 (collapsed), nav variants 9:226, Playlist 55:5125.
 
 import { store } from '../store.js';
+import { api } from '../api.js';
 import { icon } from '../icons.js';
+import { toast } from './toast.js';
 
 const NAV = [
   { href: '#/home',    icon: 'home',    label: 'Home',     match: ['home'] },
@@ -83,9 +85,23 @@ export function mountSidebar(el) {
     store.set('sidebarCollapsed', !store.get('sidebarCollapsed'));
   });
 
-  // New Playlist modal isn't designed yet. The modals step will listen for this event.
-  el.querySelector('[data-sb-new]').addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('tunyx:new-playlist'));
+  // New Playlist: create it via the API, then add it to the shared list. store.set('playlists')
+  // fires renderPlaylists, so the sidebar updates itself. Disabled while the request runs so a
+  // double-click cannot create two playlists (there is no delete yet).
+  const newBtn = el.querySelector('[data-sb-new]');
+  newBtn.addEventListener('click', async () => {
+    if (newBtn.disabled) return;
+    newBtn.disabled = true;
+    try {
+      const n = (store.get('playlists') || []).length + 1;
+      const created = await api.createPlaylist(`New Playlist ${n}`);
+      store.set('playlists', [...(store.get('playlists') || []), created]);
+      toast('Playlist created', 'playlist');
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      newBtn.disabled = false;
+    }
   });
 
   store.on('playlists', renderPlaylists);

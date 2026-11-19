@@ -1,0 +1,20 @@
+/* Up next (Sidebar_R). The 360px panel, 16 padding and the 24 gap between header and list
+   come from shell.css; this file only lays out the header and the scrolling list. */
+.un-head { flex: none; }
+.un-title, .un-from { margin: 0; }
+.un-title { color: var(--text-main); }
+.un-from { color: var(--text-sec); }
+
+.un-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.un-row { flex: none; }
+
+/* panel content width = 360 - 2*16 padding; compact rows grow from their 280 default */
+.un-list .tr-compact { max-width: 328px; }

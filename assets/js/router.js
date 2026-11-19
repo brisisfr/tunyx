@@ -1,4 +1,4 @@
-// Hash router: #/home #/explore #/library #/playlist/3 #/liked #/uploads #/playing #/search?q=…
+// Hash router: #/home #/explore #/library #/playlist/3 #/liked #/uploads #/playing
 // Hash routing keeps the URL flat, so relative API/file paths (api/songs.php, uploads/…) always resolve.
 import { store } from './store.js';
 import { esc } from './util.js';
@@ -11,7 +11,6 @@ import playlist from './views/playlist.js';
 import liked from './views/liked.js';
 import uploads from './views/uploads.js';
 import nowPlaying from './views/nowPlaying.js';
-import search from './views/search.js';
 
 const routes = [
   { name: 'home', re: /^\/home$/, view: home },
@@ -21,7 +20,6 @@ const routes = [
   { name: 'liked', re: /^\/liked$/, view: liked },
   { name: 'uploads', re: /^\/uploads$/, view: uploads },
   { name: 'playing', re: /^\/playing$/, view: nowPlaying },
-  { name: 'search', re: /^\/search$/, view: search },
 ];
 
 let cleanup = null;
@@ -54,7 +52,7 @@ export async function render() {
 
   const el = document.createElement('div');
   el.className = `view view-${match?.name ?? 'notfound'}`;
-  el.innerHTML = '<div class="loading">Loading…</div>';
+  el.innerHTML = `<div class="loading" role="status" aria-label="Loading">${icon('hourglass', 80)}</div>`;
   view.replaceChildren(el);
   view.scrollTop = 0;
 

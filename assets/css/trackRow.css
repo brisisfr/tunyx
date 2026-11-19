@@ -38,6 +38,7 @@
 
 /* compact */
 .tr-compact { width: 100%; max-width: 280px; }
+.tr-compact .tr-time { margin-left: auto; flex: none; padding-right: var(--space-8); }
 
 /* full: title column | artist (~47%) | time | heart | menu */
 .tr-full, .tr-header {

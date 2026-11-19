@@ -23,6 +23,7 @@ export function trackRowHTML(t, { variant = 'full' } = {}) {
     return `<div class="tr tr-compact" data-track-id="${id}" tabindex="0">
       ${rowCoverHTML(t)}
       <span class="tr-text"><span class="tr-title text-body-strong">${esc(t.title)}</span><span class="tr-artist text-caption">${esc(t.artist_name || 'Unknown Artist')}</span></span>
+      <span class="tr-time text-caption">${fmtDur(t.duration_sec)}</span>
     </div>`;
   }
   return `<div class="tr tr-full" data-track-id="${id}" tabindex="0">

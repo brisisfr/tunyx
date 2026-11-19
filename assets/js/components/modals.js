@@ -138,9 +138,10 @@ export function openConfirmDelete({ title = 'Are you sure?', text = 'This proces
       <button class="md-btn" type="button" data-md-close>Cancel</button>
       <button class="md-btn md-danger" type="button" data-md-ok>Delete</button>
     </div>`);
-  box.querySelector('[data-md-ok]').addEventListener('click', async (e) => {
-    e.currentTarget.disabled = true;
-    try { await onConfirm?.(); closeLayer(); } catch (ex) { e.currentTarget.disabled = false; toast(ex.message || 'Something went wrong!', 'error'); }
+  const ok = box.querySelector('[data-md-ok]');
+  ok.addEventListener('click', async () => {
+    ok.disabled = true;
+    try { await onConfirm?.(); closeLayer(); } catch (ex) { ok.disabled = false; toast(ex.message || 'Something went wrong!', 'error'); }
   });
   box.querySelector('.md-btn').focus();
 }

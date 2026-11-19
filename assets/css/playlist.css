@@ -14,6 +14,19 @@
 
 #view .pl-meta { min-width: 0; }
 #view .pl-title { margin: 0; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#view .pl-title[role="button"] { cursor: text; border-radius: var(--radius-8); }
+#view .pl-title[role="button"]:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--brand-lavender); }
+#view .pl-rename {
+  width: 100%;
+  min-width: 0;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-8);
+  background: var(--bg-base);
+  color: var(--text-main);
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--brand-lavender);
+}
 #view .pl-owner { margin: 34px 0 0; color: var(--text-sec); }
 #view .pl-stats { display: flex; flex-direction: column; gap: 13px; margin-top: 52px; color: var(--text-sec); }
 

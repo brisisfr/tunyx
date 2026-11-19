@@ -151,19 +151,19 @@ export function closeSimplebox() { menu?.remove(); menu = null; document.removeE
 const outside = (e) => { if (menu && !menu.contains(e.target)) closeSimplebox(); };
 const esc_ = (e) => { if (e.key === 'Escape') closeSimplebox(); };
 
-/** items: [{ label, onClick, danger? }] */
+/** items: [{ label, onClick, danger?, disabled? }]. More than 8 rows scroll; a disabled row is greyed out and ignores clicks. */
 export function openSimplebox(anchor, items) {
   closeSimplebox();
   menu = document.createElement('div');
   menu.className = 'sbox';
-  menu.innerHTML = items.map((it, i) => `<button type="button" class="sbox-item${it.danger ? ' is-danger' : ''}" data-i="${i}">${esc(it.label)}</button>`).join('');
+  menu.innerHTML = items.map((it, i) => `<button type="button" class="sbox-item${it.danger ? ' is-danger' : ''}${it.disabled ? ' is-disabled' : ''}"${it.disabled ? ' disabled aria-disabled="true"' : ''} data-i="${i}">${esc(it.label)}</button>`).join('');
   document.body.appendChild(menu);
   const r = anchor instanceof Element ? anchor.getBoundingClientRect() : { left: anchor.x, right: anchor.x, top: anchor.y, bottom: anchor.y };
   const w = menu.offsetWidth; const h = menu.offsetHeight;
   menu.style.left = `${Math.max(8, Math.min(r.right - w, innerWidth - w - 8))}px`;
   menu.style.top = `${r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4}px`;
   menu.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-i]'); if (!b) return;
+    const b = e.target.closest('[data-i]'); if (!b || b.disabled) return;
     const it = items[+b.dataset.i]; closeSimplebox(); it.onClick?.();
   });
   document.addEventListener('mousedown', outside, true);

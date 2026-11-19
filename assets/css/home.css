@@ -6,7 +6,7 @@
 
 #view .view-home .hm-grid {
   display: grid;
-  grid-template-columns: repeat(3, 280px);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 280px));
   gap: 10px 30px;                    /* Figma measures 30, not a spacing token */
   margin-top: 32px;
 }

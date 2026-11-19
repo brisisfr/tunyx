@@ -2,6 +2,7 @@
 // Paths are relative to the site root (same origin), so there is no CORS and no config.
 import { ApiError } from './util.js';
 import { mockRequest } from './mock.js';
+import { store } from './store.js';
 
 export const MOCK = new URLSearchParams(location.search).get('mock') === '1';
 
@@ -50,6 +51,7 @@ export function normalizeTrack(t) {
     duration_sec: t.duration_sec == null ? null : Number(t.duration_sec),
     genre: t.genre ?? null,
     uploaded_at: t.uploaded_at ?? null,
+    uploader_id: t.uploader_id ?? null,
   };
   trackCache.set(n.track_id, n);
   return n;
@@ -96,4 +98,30 @@ export const api = {
 
   // upload (multipart: title, artist_name, album_title?, genre?, duration_sec?, audio, cover?)
   upload: (formData) => request('api/upload.php', { method: 'POST', body: formData }),
+
+  // ---- playlist management / uploads: UI is ready, these endpoints are not ----
+  // needs backend: api/playlists.php {action:'delete', playlist_id}
+  deletePlaylist: (playlist_id) => postJson('api/playlists.php', { action: 'delete', playlist_id }),
+  // needs backend: api/playlists.php {action:'rename', playlist_id, title}
+  renamePlaylist: async (playlist_id, title) => {
+    const r = await postJson('api/playlists.php', { action: 'rename', playlist_id, title });
+    // Until the backend ships it, every POST inserts a new playlist. A different id back means
+    // action:'rename' was ignored, so fail instead of silently "renaming" a brand new row.
+    if (r?.playlist_id != null && String(r.playlist_id) !== String(playlist_id)) {
+      throw new Error("Rename isn't available yet: the server ignored action:'rename'.");
+    }
+    return r;
+  },
+
+  // needs backend: api/songs.php {action:'delete', track_id} (owner only)
+  deleteTrack: (track_id) => postJson('api/songs.php', { action: 'delete', track_id }),
+
+  // needs backend: api/songs.php?mine=1 and uploader_id on the rows
+  getMyUploads: async () => {
+    const d = await get('api/songs.php', { mine: 1 });
+    const rows = Array.isArray(d) ? d : d?.tracks ?? [];
+    if (rows.length && rows.every((t) => !('uploader_id' in t))) throw new Error('needs backend: songs.php?mine=1');
+    const me = store.get('user')?.user_id;
+    return rows.filter((t) => String(t.uploader_id) === String(me)).map(normalizeTrack);
+  },
 };

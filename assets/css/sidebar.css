@@ -157,6 +157,47 @@
   color: var(--text-sec);
 }
 
+/* Playlist row wrapper: hover "more" button; right click works too (the only way when collapsed) */
+#sidebar .sb-pl-row { flex: none; position: relative; }
+#sidebar .sb-pl-row .sb-pl { padding-right: 28px; }
+#app[data-sidebar="collapsed"] #sidebar .sb-pl-row .sb-pl { padding-right: var(--space-4); }
+
+#sidebar .sb-more {
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-8);
+  background: var(--bg-elevated);
+  color: var(--text-sec);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+#sidebar .sb-pl-row:hover .sb-more,
+#sidebar .sb-pl-row:focus-within .sb-more { opacity: 1; pointer-events: auto; }
+#sidebar .sb-more:hover { color: var(--text-main); }
+#app[data-sidebar="collapsed"] #sidebar .sb-more { display: none; }
+
+/* inline rename input replaces the row title while editing */
+#sidebar .sb-rename {
+  width: 100%;
+  min-width: 0;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-8);
+  background: var(--bg-base);
+  color: var(--text-main);
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--brand-lavender);
+}
+
 /* Collapsed (CHome): icons and cover squares only; no New Playlist button */
 #app[data-sidebar="collapsed"] #sidebar .sb-label,
 #app[data-sidebar="collapsed"] #sidebar .sb-pl-text,

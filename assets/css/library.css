@@ -5,7 +5,7 @@
 
 #view .view-library .lb-grid {
   display: grid;
-  grid-template-columns: repeat(3, 280px);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 280px));
   gap: 10px 30px;
   margin-top: 32px;
 }

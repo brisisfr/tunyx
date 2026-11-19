@@ -66,9 +66,11 @@
   white-space: nowrap;
 }
 #topbar .tb-row:hover { background: var(--bg-base); }
+#topbar .tb-row.is-active { background: var(--bg-surface); box-shadow: inset 2px 0 0 var(--brand-lavender); }
 #topbar .tb-row-title,
 #topbar .tb-row-artist { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 #topbar .tb-row-artist { color: var(--text-sec); }
+#topbar .tb-drop mark { background: none; color: var(--brand-lavender); font-weight: 500; }
 #topbar .tb-row-none { color: var(--text-sec); cursor: default; }
 #topbar .tb-row-none:hover { background: none; }
 

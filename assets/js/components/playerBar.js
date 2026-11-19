@@ -51,7 +51,7 @@ export function mountPlayerBar(el) {
   }
 
   function renderQueueBtn() {
-    const open = (store.get('panelPref') ?? store.get('panelDefault')) === true;
+    const open = document.getElementById('app')?.dataset.panel === 'open';
     queueBtn.classList.toggle('is-active', open);
     queueBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
   }
@@ -64,13 +64,14 @@ export function mountPlayerBar(el) {
     else if (a === 'next') player.next();
     else if (a === 'toggle') player.toggle();
     else if (a === 'mute') player.toggleMute();
-    else if (a === 'queue') store.set('panelPref', !((store.get('panelPref') ?? store.get('panelDefault')) === true));
+    else if (a === 'queue') store.set('panelPref', document.getElementById('app')?.dataset.panel !== 'open');
   });
   vol.addEventListener('input', () => { player.setVolume(vol.value / 100); setVolFill(); });
 
   player.subscribe(render);
   ['panelPref', 'panelDefault'].forEach((k) => store.on(k, renderQueueBtn));
   store.on('likedIds', () => syncRows(el));
+  matchMedia('(max-width: 1100px)').addEventListener('change', renderQueueBtn);
   render();
   renderQueueBtn();
 }

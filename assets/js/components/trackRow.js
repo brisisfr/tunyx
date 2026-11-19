@@ -4,10 +4,11 @@
 //             bindRows(container, tracks, 'Playlist name')   // click-to-play + row menu, delegated, call once per container
 import { store } from '../store.js';
 import { player } from '../player.js';
-import { getTrack } from '../api.js';
+import { api, getTrack } from '../api.js';
 import { icon } from '../icons.js';
-import { esc, fmtDur, assetUrl } from '../util.js';
+import { esc, fmtDur, assetUrl, refreshView } from '../util.js';
 import { toast } from './toast.js';
+import { openConfirmDelete, openSimplebox } from './modals.js';
 
 /** cover/placeholder: elevated square + music icon; a real cover_path is layered on top. */
 export function rowCoverHTML(t) {
@@ -18,7 +19,7 @@ export function rowCoverHTML(t) {
 /** variant: 'compact' | 'full'. index (optional) is shown only in the full variant as the row number. */
 export function trackRowHTML(t, { variant = 'full' } = {}) {
   const id = esc(t.track_id);
-  const heart = `<button class="tr-heart" type="button" data-like="${id}" aria-label="Like">${icon('heart', 20)}</button>`;
+  const heart = `<button class="tr-heart" type="button" data-like="${id}" aria-label="Like" title="Like">${icon('heart', 20)}</button>`;
   if (variant === 'compact') {
     return `<div class="tr tr-compact" data-track-id="${id}" tabindex="0">
       ${rowCoverHTML(t)}
@@ -31,28 +32,95 @@ export function trackRowHTML(t, { variant = 'full' } = {}) {
     <span class="tr-artist text-body">${esc(t.artist_name || 'Unknown Artist')}</span>
     <span class="tr-time text-caption">${fmtDur(t.duration_sec)}</span>
     ${heart}
-    <button class="tr-menu" type="button" data-menu aria-label="Add to queue" title="Add to queue">${icon('more', 20)}</button>
+    <button class="tr-menu" type="button" data-menu aria-label="Track options" title="Track options">${icon('more', 20)}</button>
   </div>`;
 }
 
 /** Column header row for the full variant. */
 export const trackHeaderHTML = () => `<div class="tr-header text-label-upper"><span>Title</span><span>Artist</span><span>Time</span><span></span><span></span></div>`;
 
-/** Delegated clicks for one container holding rows. `tracks` is the list the rows were rendered from. */
+// ---- track menu: opens from the three-dot button, the cursor, or the focused row (Shift+F10) ----
+function addToPlaylistMenu(t, anchor) {
+  const lists = store.get('playlists') || [];
+  openSimplebox(anchor, lists.length
+    ? lists.map((p) => ({
+        label: p.title,
+        onClick: async () => {
+          try {
+            await api.addToPlaylist(p.playlist_id, t.track_id);
+            toast(`Added to ${p.title}`, 'playlist');
+          } catch (e) { toast(e.message || 'Something went wrong', 'error'); }
+        },
+      }))
+    : [{ label: 'No playlists yet', disabled: true }]);
+}
+
+/** Track menu for rows and cards. `anchor` is the trigger element or a cursor point ({x,y}). */
+export function openTrackMenu(t, anchor) {
+  const items = [
+    { label: 'Add to queue', onClick: () => player.addToQueue(t) },
+    { label: 'Add to playlist', onClick: () => addToPlaylistMenu(t, anchor) },
+  ];
+  if (store.get('route')?.name === 'playlist') {
+    items.push({
+      label: 'Remove from this playlist',
+      onClick: async () => {
+        try {
+          await api.removeFromPlaylist(store.get('route').params[0], t.track_id);
+          toast('Removed from playlist', 'removed');
+          refreshView();
+        } catch (e) { toast(e.message || 'Something went wrong', 'error'); }
+      },
+    });
+  }
+  if (t.uploader_id != null && String(t.uploader_id) === String(store.get('user')?.user_id)) {
+    items.push({
+      label: 'Delete song',
+      danger: true,
+      onClick: () => openConfirmDelete({
+        title: 'Delete this song?',
+        onConfirm: async () => { await api.deleteTrack(t.track_id); toast('Song deleted', 'removed'); refreshView(); },
+      }),
+    });
+  }
+  openSimplebox(anchor, items);
+}
+
+/** Delegated clicks/menu for one container holding rows. `tracks` is the list the rows were rendered from.
+ *  `label` may be a function so a renamed playlist's label stays current. */
 export function bindRows(container, tracks, label = '') {
   const byId = new Map(tracks.map((t) => [String(t.track_id), t]));
+  const trackOf = (row) => byId.get(row.dataset.trackId) || getTrack(row.dataset.trackId);
+  const playLabel = () => (typeof label === 'function' ? label() : label);
+
   const run = (e) => {
     const row = e.target.closest('.tr');
     if (!row || !container.contains(row)) return;
     if (e.target.closest('[data-like]')) return;                 // main.js handles hearts
-    const t = byId.get(row.dataset.trackId) || getTrack(row.dataset.trackId);
+    const t = trackOf(row);
     if (!t) return;
-    if (e.target.closest('[data-menu]')) { player.addToQueue(t); return; }
-    player.playTrack(t, tracks, label);
+    if (e.target.closest('[data-menu]')) { openTrackMenu(t, e.target.closest('[data-menu]')); return; }
+    player.playTrack(t, tracks, playLabel());
   };
+
   container.addEventListener('click', run);
+  container.addEventListener('contextmenu', (e) => {
+    const row = e.target.closest('.tr');
+    if (!row || !container.contains(row)) return;
+    e.preventDefault();
+    const t = trackOf(row);
+    if (t) openTrackMenu(t, { x: e.clientX, y: e.clientY });
+  });
   container.addEventListener('keydown', (e) => {
-    if ((e.key === 'Enter') && e.target.classList?.contains('tr')) run(e);
+    const row = e.target.closest?.('.tr');
+    if (!row || !container.contains(row)) return;
+    if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+      e.preventDefault();
+      const t = trackOf(row);
+      if (t) openTrackMenu(t, row);
+      return;
+    }
+    if (e.key === 'Enter' && e.target.classList?.contains('tr')) run(e);
   });
 }
 

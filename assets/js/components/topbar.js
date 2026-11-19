@@ -10,6 +10,17 @@ import { logout } from '../session.js';
 
 const MAX = 5;
 
+/** Escape first, then wrap the first case-insensitive match so a query can never inject HTML. */
+function mark(text, q) {
+  const safe = esc(text ?? '');
+  const needle = esc(q ?? '');
+  if (!needle) return safe;
+  const i = safe.toLowerCase().indexOf(needle.toLowerCase());
+  return i < 0
+    ? safe
+    : `${safe.slice(0, i)}<mark>${safe.slice(i, i + needle.length)}</mark>${safe.slice(i + needle.length)}`;
+}
+
 export function mountTopbar(el) {
   el.innerHTML = `
     <div class="tb">
@@ -35,9 +46,21 @@ export function mountTopbar(el) {
   const menu = el.querySelector('.tb-menu');
 
   let results = [];
+  let active = -1;
   let seq = 0;
 
-  const closeDrop = () => { drop.hidden = true; drop.innerHTML = ''; results = []; };
+  const closeDrop = () => { drop.hidden = true; drop.innerHTML = ''; results = []; active = -1; };
+
+  // keyboard highlight: -1 = nothing, otherwise an index into results
+  function paintActive() {
+    [...drop.querySelectorAll('.tb-row')].forEach((r, i) => r.classList.toggle('is-active', i === active));
+    drop.children[active]?.scrollIntoView({ block: 'nearest' });
+  }
+  function moveActive(d) {
+    if (!results.length) return;
+    active = active < 0 ? (d > 0 ? 0 : results.length - 1) : (active + d + results.length) % results.length;
+    paintActive();
+  }
 
   async function search(q) {
     const my = ++seq;
@@ -46,10 +69,11 @@ export function mountTopbar(el) {
       const found = (await api.getTracks({ q })).slice(0, MAX);
       if (my !== seq || document.activeElement !== input) return;   // stale answer, or Esc/blur meanwhile
       results = found;
+      active = -1;
       drop.innerHTML = found.length
         ? found.map((t) => `<button class="tb-row" type="button">
-            <span class="tb-row-title text-body">${esc(t.title)}</span>
-            <span class="tb-row-artist text-body">${esc(t.artist_name)}</span>
+            <span class="tb-row-title text-body">${mark(t.title, q)}</span>
+            <span class="tb-row-artist text-body">${mark(t.artist_name, q)}</span>
           </button>`).join('')
         : `<div class="tb-row tb-row-none text-body">No results</div>`;
       drop.hidden = false;
@@ -62,9 +86,23 @@ export function mountTopbar(el) {
   }
 
   const ask = debounce((v) => search(v), 300);
-  input.addEventListener('input', () => ask(input.value.trim()));
+  input.addEventListener('input', () => { active = -1; ask(input.value.trim()); });
   input.addEventListener('focus', () => { if (input.value.trim()) ask(input.value.trim()); });
-  input.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDrop(); input.blur(); } });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeDrop(); input.focus(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (drop.hidden) return;
+      e.preventDefault();
+      moveActive(e.key === 'ArrowDown' ? 1 : -1);
+      return;
+    }
+    if (e.key === 'Enter' && !drop.hidden && active >= 0) {
+      e.preventDefault();
+      player.playTrack(results[active], results, 'Search');
+      closeDrop();
+      input.blur();
+    }
+  });
 
   drop.addEventListener('click', (e) => {
     const row = e.target.closest('.tb-row');
@@ -105,5 +143,13 @@ export function mountTopbar(el) {
     closeDrop();
     setMenu(false);
   });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDrop(); setMenu(false); } });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeDrop(); setMenu(false); }
+    // "/" anywhere (not while typing, no modifier) jumps to search
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey
+      && !e.target.closest?.('input, textarea, select, [contenteditable]')) {
+      e.preventDefault();
+      input.focus();
+    }
+  });
 }

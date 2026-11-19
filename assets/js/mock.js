@@ -14,7 +14,7 @@ async function load(name) {
 
 let loggedIn = (() => { try { return sessionStorage.getItem('tunyx_mock_in') === '1'; } catch { return false; } })();
 const setIn = (v) => { loggedIn = v; try { sessionStorage.setItem('tunyx_mock_in', v ? '1' : '0'); } catch { /* ignore */ } };
-let likes = null; let playlists = null; let plTracks = null; let nextPl = 100;
+let likes = null; let playlists = null; let plTracks = null; let history = null; let nextPl = 100;
 
 export async function mockRequest(path, { method = 'GET', body } = {}) {
   await wait(80);
@@ -71,14 +71,19 @@ export async function mockRequest(path, { method = 'GET', body } = {}) {
         playlists.unshift(p); plTracks[p.playlist_id] = [];
         return { playlist_id: p.playlist_id, title };
       }
-      return playlists.map((p) => ({ ...p, track_count: (plTracks[p.playlist_id] || []).length }));
+      return { playlists: playlists.map((p) => ({ ...p, track_count: (plTracks[p.playlist_id] || []).length })) };
     }
 
-    case 'playlist_tracks': {
+    case 'playlists_tracks': case 'playlist_tracks': {
       const pid = Number(q.get('playlist_id'));
       const list = plTracks[pid];
       if (!list) throw new ApiError(404, 'Playlist not found');
-      if (m === 'GET') return list.map((t, i) => ({ ...t, position: i + 1 }));
+      if (m === 'GET') return { tracks: list.map((t, i) => ({ ...t, position: i + 1 })) };
+      if (m === 'POST' && json().action === 'remove') {
+        const id = Number(json().track_id);
+        plTracks[pid] = list.filter((t) => t.track_id !== id);
+        return null;
+      }
       if (m === 'POST') {
         const id = Number(json().track_id);
         if (list.some((t) => t.track_id === id)) throw new ApiError(409, 'Track is already in this playlist');
@@ -93,6 +98,17 @@ export async function mockRequest(path, { method = 'GET', body } = {}) {
         return null;
       }
       throw new ApiError(405, 'Method not allowed');
+    }
+
+    case 'history': {
+      history ||= [];
+      if (m === 'GET') return { history: history.slice(0, Number(q.get('limit')) || 30) };
+      const b = json();
+      if (b.action === 'clear') { history = []; return null; }
+      const t = songs.find((s) => s.track_id === Number(b.track_id));
+      if (!t) throw new ApiError(404, 'Track not found');
+      history.unshift({ ...t, played_at: new Date().toISOString() });
+      return null;
     }
 
     case 'upload': throw new ApiError(403, 'Admin access required');

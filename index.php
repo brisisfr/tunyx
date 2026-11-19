@@ -21,7 +21,6 @@
   <link rel="stylesheet" href="assets/css/explore.css">
   <link rel="stylesheet" href="assets/css/library.css">
   <link rel="stylesheet" href="assets/css/playlist.css">
-  <link rel="stylesheet" href="assets/css/views.css">
   <link rel="stylesheet" href="assets/css/upNext.css">
   <link rel="stylesheet" href="assets/css/modals.css">
   <link rel="stylesheet" href="assets/css/nowPlaying.css">

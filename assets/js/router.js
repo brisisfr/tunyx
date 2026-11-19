@@ -36,7 +36,8 @@ const errorHTML = (e) => `
   <div class="empty">${icon('alert', 40)}<div><h3>Something went wrong</h3><p>${esc(e.message || 'Unknown error')}</p></div>
   <button class="btn" data-retry>Try again</button></div>`;
 
-export async function render() {
+/** keepScroll: used by 'tunyx:refresh' (re-render the same page after an upload/delete) so the list doesn't jump to the top. */
+export async function render(keepScroll = false) {
   if (!store.get('user')) return;
   const view = document.getElementById('view');
   const { path, query } = parse();
@@ -54,6 +55,7 @@ export async function render() {
   el.className = `view view-${match?.name ?? 'notfound'}`;
   el.innerHTML = `<div class="loading" role="status" aria-label="Loading">${icon('hourglass', 80)}</div>`;
   view.replaceChildren(el);
+  const top = keepScroll === true ? view.scrollTop : 0;
   view.scrollTop = 0;
 
   if (!match) {
@@ -68,15 +70,16 @@ export async function render() {
     if (my !== token) return;
     if (e.status === 401) return;                      // the login modal is already up
     el.innerHTML = errorHTML(e);
-    el.querySelector('[data-retry]')?.addEventListener('click', render);
+    el.querySelector('[data-retry]')?.addEventListener('click', () => render());
   }
   syncRows(el);
+  if (top) view.scrollTop = top;
 }
 
 export function start() {
   if (!started) {
-    window.addEventListener('hashchange', render);
-    window.addEventListener('tunyx:refresh', render);
+    window.addEventListener('hashchange', () => render());
+    window.addEventListener('tunyx:refresh', () => render(true));
     started = true;
   }
   if (!location.hash) location.replace('#/home');

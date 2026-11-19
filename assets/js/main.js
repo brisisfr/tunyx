@@ -18,7 +18,8 @@ if (MOCK) document.body.dataset.mock = '1';
 const narrow = matchMedia('(max-width: 1100px)');
 function applyLayout() {
   app.dataset.sidebar = store.get('sidebarCollapsed') || narrow.matches ? 'collapsed' : 'expanded';
-  const open = store.get('panelPref') ?? store.get('panelDefault');
+  // narrow screens: Up next is a drawer, closed unless the user opened it
+  const open = narrow.matches ? store.get('panelPref') === true : (store.get('panelPref') ?? store.get('panelDefault'));
   app.dataset.panel = open ? 'open' : 'closed';
 }
 ['sidebarCollapsed', 'panelPref', 'panelDefault'].forEach((k) => store.on(k, applyLayout));

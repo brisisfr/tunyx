@@ -102,3 +102,20 @@
   padding: var(--space-12) var(--space-24);
   background: var(--bg-surface);
 }
+
+/* Under 1100px the sidebar is already collapsed (88px); Up next would squash Main below ~600px,
+   so it becomes a drawer over Main instead of a third column. It stays closed until the queue button is pressed. */
+@media (max-width: 1100px) {
+  #app[data-panel="open"] .app-body {
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  }
+  #app[data-panel="open"] #panel {
+    position: fixed;
+    top: var(--space-12);
+    right: var(--space-12);
+    bottom: calc(var(--playerbar-h) + var(--space-12));
+    width: min(var(--panel-w), calc(100vw - 24px));
+    z-index: 800;
+    box-shadow: 0 0 0 1px var(--bg-elevated), 0 16px 48px rgba(0, 0, 0, .6);
+  }
+}

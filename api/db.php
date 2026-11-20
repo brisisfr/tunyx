@@ -1,8 +1,8 @@
 <?php
-$host = "127.0.0.1";
-$db   = "tunyx17";
-$user = "root";
-$pass = "";
+$host    = "127.0.0.1";
+$db      = "tunyx";
+$user    = "root";
+$pass    = "";
 $charset = "utf8mb4";
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -17,9 +17,9 @@ try {
 } catch (PDOException $e) {
     http_response_code(500);
     header("Content-Type: application/json; charset=utf-8");
-    echo json_encode(["Koneksi Dengan Database BERHASIL Yaaa Sayangkuuu" => false, "Pesan" => "Koneksi Dengan Database GAGAL Yaaa Sayangkuuuu"]);
+    echo json_encode([
+        "success" => false,
+        "message" => "Koneksi Dengan Database GAGAL Yaaa Sayangkuuuu: " . $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
-
-
-

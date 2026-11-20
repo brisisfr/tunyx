@@ -7,27 +7,27 @@ $username = trim((string) ($input["username"] ?? ""));
 $email    = trim((string) ($input["email"] ?? ""));
 $password = (string) ($input["password"] ?? "");
 
-if ($username === "" || mb_strlen($username) > 50) {
-    json_response(false, "Username Wajib Diisi Sayangg (maksimal 50 karakter)", null, 422); // [CUSTOM MSG]
+if ($err = validate_username($username)) {
+    json_response(false, $err, null, 422);
 }
 if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 100) {
-    json_response(false, "Format Email Tidak Valid. Ganti Pakai Email Lain Yaaa", null, 422); // [CUSTOM MSG]
+    json_response(false, "Format Email Tidak Valid. Ganti Pakai Email Lain Yaaa", null, 422);
 }
-if (strlen($password) < 6) {
-    json_response(false, "Password Minimal 6 Karakter BEIB", null, 422); // [CUSTOM MSG]
+if ($err = validate_password($password)) {
+    json_response(false, $err, null, 422);
 }
 
 $check = $pdo->prepare("SELECT user_id FROM users WHERE username = :u OR email = :e");
 $check->execute(["u" => $username, "e" => $email]);
 if ($check->fetch()) {
-    json_response(false, "Username Atau Email sudah digunakan Oleh Orang Lain😹", null, 409); // [CUSTOM MSG]
+    json_response(false, "Username Atau Email sudah digunakan Oleh Orang Lain😹", null, 409);
 }
 
 $hash = password_hash($password, PASSWORD_BCRYPT);
 $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash) VALUES (:u, :e, :p)");
 $stmt->execute(["u" => $username, "e" => $email, "p" => $hash]);
 
-json_response(true, "Akun Berhasil Dibuat! Silakan Login Pake Akun Yang Udah Dibikin Yaaa", [ // [CUSTOM MSG]
+json_response(true, "Akun Berhasil Dibuat! Silakan Login Pake Akun Yang Udah Dibikin Yaaa", [
     "user_id"  => (int) $pdo->lastInsertId(),
     "username" => $username,
     "email"    => $email

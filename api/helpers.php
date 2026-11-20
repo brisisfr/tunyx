@@ -1,4 +1,8 @@
 <?php
+// Semua error PHP dikirim sebagai JSON, bukan halaman HTML,
+// biar frontend bisa baca pesannya.
+ini_set("display_errors", "0");
+
 require_once __DIR__ . "/db.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -17,10 +21,14 @@ function json_response(bool $success, string $message, $data = null, int $status
     exit;
 }
 
+set_exception_handler(function (Throwable $e) {
+    json_response(false, "Terjadi Kesalahan Server: " . $e->getMessage(), null, 500);
+});
+
 function require_method($allowed): void {
     $method = $_SERVER["REQUEST_METHOD"] ?? "GET";
     if (!in_array($method, (array) $allowed, true)) {
-        json_response(false, "Maaf Yaa.. Tapi Kamu Gk Boleh Masuk", null, 405); // [CUSTOM MSG]
+        json_response(false, "Maaf Yaa.. Tapi Kamu Gk Boleh Masuk", null, 405);
     }
 }
 
@@ -32,7 +40,66 @@ function get_json_input(): array {
 
 function require_login(): int {
     if (empty($_SESSION["user_id"])) {
-        json_response(false, "Login Dulu Sayangg Baru Bisa Pakai", null, 401); // [CUSTOM MSG]
+        json_response(false, "Login Dulu Sayangg Baru Bisa Pakai", null, 401);
     }
     return (int) $_SESSION["user_id"];
+}
+
+function uploads_root(): string {
+    return dirname(__DIR__) . DIRECTORY_SEPARATOR . "uploads";
+}
+
+// Mengembalikan pesan error, atau null kalau valid.
+function validate_username(string $u): ?string {
+    if (!preg_match('/^[A-Za-z0-9_.]{3,30}\z/', $u)) {
+        return "Username 3-30 Karakter, Hanya Huruf, Angka, Titik, dan Underscore";
+    }
+    return null;
+}
+
+// Hanya ASCII yang bisa dicetak (tanpa spasi, emoji, atau Unicode aneh).
+function validate_password(string $p): ?string {
+    if (!preg_match('/^[\x21-\x7E]{6,64}\z/', $p)) {
+        return "Password 6-64 Karakter, Hanya Huruf, Angka, dan Simbol Biasa (Tanpa Spasi, Emoji, atau Unicode)";
+    }
+    return null;
+}
+
+function current_user(PDO $pdo, int $userId): array {
+    $s = $pdo->prepare("SELECT user_id, username, email, avatar_path FROM users WHERE user_id = :id");
+    $s->execute(["id" => $userId]);
+    $u = $s->fetch();
+    if (!$u) {
+        json_response(false, "User Tidak Ditemukan", null, 404);
+    }
+    $u["user_id"] = (int) $u["user_id"];
+    return $u;
+}
+
+// Validasi + simpan gambar. Mengembalikan path relatif, mis. "uploads/avatars/xxx.jpg".
+function save_image(array $file, string $subdir, string $prefix, int $maxBytes = 5242880): string {
+    if (($file["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        json_response(false, "Gagal Mengunggah Gambar", null, 422);
+    }
+    if ($file["size"] > $maxBytes) {
+        json_response(false, "Ukuran Gambar Maksimal " . round($maxBytes / 1048576) . "mb", null, 413);
+    }
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file["tmp_name"]);
+    $map  = ["image/jpeg" => "jpg", "image/png" => "png", "image/webp" => "webp"];
+    if (!isset($map[$mime])) {
+        json_response(false, "Format Gambar Harus JPG, PNG, atau WEBP", null, 415);
+    }
+    $dir = uploads_root() . DIRECTORY_SEPARATOR . $subdir;
+    if (!is_dir($dir)) mkdir($dir, 0755, true);
+    $name = $prefix . "_" . bin2hex(random_bytes(12)) . "." . $map[$mime];
+    if (!move_uploaded_file($file["tmp_name"], $dir . DIRECTORY_SEPARATOR . $name)) {
+        json_response(false, "Gagal Menyimpan Gambar Ke Server", null, 500);
+    }
+    return "uploads/$subdir/$name";
+}
+
+function delete_upload(?string $rel): void {
+    if (!$rel || strpos($rel, "uploads/") !== 0 || strpos($rel, "..") !== false) return;
+    $full = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace("/", DIRECTORY_SEPARATOR, $rel);
+    if (is_file($full)) @unlink($full);
 }

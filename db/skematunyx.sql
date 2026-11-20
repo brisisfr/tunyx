@@ -4,11 +4,11 @@
 -- Engine: InnoDB | Charset: utf8mb4 | Collation: utf8mb4_unicode_ci
 -- ==========================================================
 
-CREATE DATABASE IF NOT EXISTS tunyx17
+CREATE DATABASE IF NOT EXISTS tunyx
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE tunyx17;
+USE tunyx;
 
 -- ----------------------------------------------------------
 -- 1. Tabel users
@@ -45,10 +45,10 @@ CREATE TABLE albums (
   cover_path VARCHAR(255) NULL,
 
   INDEX idx_albums_artist_id (artist_id),
-  CONSTRAINT fk_albums_artist
-    FOREIGN KEY (artist_id) REFERENCES artists(artist_id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE
+  CONSTRAINT fk_albums_artist,
+    FOREIGN KEY (artist_id) REFERENCES artists(artist_id),
+    ON DELETE RESTRICT,
+    ON UPDATE CASCADE,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
@@ -74,16 +74,16 @@ CREATE TABLE tracks (
 
   CONSTRAINT fk_tracks_artist
     FOREIGN KEY (artist_id) REFERENCES artists(artist_id)
-    ON DELETE RESTRICT
+    ON DELETE RESTRICT,
     ON UPDATE CASCADE,
   CONSTRAINT fk_tracks_album
     FOREIGN KEY (album_id) REFERENCES albums(album_id)
-    ON DELETE SET NULL
+    ON DELETE SET NULL,
     ON UPDATE CASCADE,
   CONSTRAINT fk_tracks_uploader
     FOREIGN KEY (uploader_id) REFERENCES users(user_id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+    ON UPDATE CASCADE,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------

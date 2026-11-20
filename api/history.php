@@ -3,7 +3,7 @@ require_once __DIR__ . "/helpers.php";
 $userId = require_login();
 $method = $_SERVER["REQUEST_METHOD"] ?? "GET";
 
-// ---- GET: riwayat pemutaran terbaru milik user ----
+// ---- GET: untuk ambil data history play si user ----
 if ($method === "GET") {
     $limit = (int) ($_GET["limit"] ?? 30);
     $limit = max(1, min(100, $limit));
@@ -17,11 +17,12 @@ if ($method === "GET") {
         INNER JOIN tracks t ON t.track_id = ph.track_id
         INNER JOIN artists ar ON ar.artist_id = t.artist_id
         LEFT JOIN albums al ON al.album_id = t.album_id
-        WHERE ph.user_id = :uid
+        WHERE ph.user_id = :uid AND (t.visibility = 'public' OR t.uploader_id = :uid2)
         ORDER BY ph.played_at DESC, ph.history_id DESC
         LIMIT :lim
     ");
     $stmt->bindValue(":uid", $userId, PDO::PARAM_INT);
+    $stmt->bindValue(":uid2", $userId, PDO::PARAM_INT);
     $stmt->bindValue(":lim", $limit, PDO::PARAM_INT);
     $stmt->execute();
 
@@ -53,8 +54,8 @@ if ($method === "POST") {
         json_response(false, "ID Lagu Tidak Valid", null, 422);
     }
 
-    $chk = $pdo->prepare("SELECT 1 FROM tracks WHERE track_id = :tid");
-    $chk->execute(["tid" => $trackId]);
+    $chk = $pdo->prepare("SELECT 1 FROM tracks WHERE track_id = :tid AND (visibility = 'public' OR uploader_id = :uid)");
+    $chk->execute(["tid" => $trackId, "uid" => $userId]);
     if (!$chk->fetch()) {
         json_response(false, "Lagu Tidak Ditemukan", null, 404);
     }

@@ -8,22 +8,23 @@ $artistName = trim((string) ($_POST["artist_name"] ?? ""));
 $albumTitle = trim((string) ($_POST["album_title"] ?? ""));
 $genre      = trim((string) ($_POST["genre"] ?? ""));
 $visibility = ($_POST["visibility"] ?? "public") === "private" ? "private" : "public";
-$duration   = ($_POST["duration_sec"] ?? "") !== "" ? (int) $_POST["duration_sec"] : null;
+$duration   = filter_var($_POST["duration_sec"] ?? "", FILTER_VALIDATE_INT);
+$duration   = ($duration === false || $duration < 0 || $duration > 86400) ? null : $duration;
 
 if ($title === "" || $artistName === "") {
-    json_response(false, "Judul Lagu dan Nama Artis Wajib Diisi", null, 422);
+    json_response(false, "Title and artist are required.", null, 422);
 }
 if (!isset($_FILES["audio"]) || $_FILES["audio"]["error"] !== UPLOAD_ERR_OK) {
-    json_response(false, "File Audio Wajib dipiliD (Pastikan Ukuran Tidak Melebihi Batas 100mb)", null, 422);
+    json_response(false, "An audio file is required (max 100 MB).", null, 422);
 }
 
 $audioExt     = strtolower(pathinfo($_FILES["audio"]["name"], PATHINFO_EXTENSION));
 $allowedAudio = ["mp3", "flac", "wav", "ogg", "m4a", "aac"];
 if (!in_array($audioExt, $allowedAudio, true)) {
-    json_response(false, "Format Audio Tidak Didukung (.$audioExt). Gunakan MP3, FLAC, WAV, OGG, M4A, atau AAC", null, 415);
+    json_response(false, "Unsupported audio format (.$audioExt). Use MP3, FLAC, WAV, OGG, M4A, or AAC.", null, 415);
 }
 if ($_FILES["audio"]["size"] > 100 * 1024 * 1024) {
-    json_response(false, "Ukuran File Audio Maksimal 100mb", null, 413);
+    json_response(false, "Audio file must be at most 100 MB.", null, 413);
 }
 
 $songDir = uploads_root() . DIRECTORY_SEPARATOR . "songs";
@@ -33,7 +34,7 @@ $audioFileName = bin2hex(random_bytes(16)) . "." . $audioExt;
 $audioDest     = $songDir . DIRECTORY_SEPARATOR . $audioFileName;
 $audioPath     = "uploads/songs/" . $audioFileName;
 
-// Cover divalidasi (cek MIME asli) dan disimpan lebih dulu; kalau gagal, fungsi langsung membalas error.
+// The cover is validated (real MIME check) and saved first; on failure the function responds immediately.
 $coverPath = null;
 if (isset($_FILES["cover"]) && $_FILES["cover"]["error"] === UPLOAD_ERR_OK) {
     $coverPath = save_image($_FILES["cover"], "covers", "cover", 10 * 1024 * 1024);
@@ -71,7 +72,7 @@ try {
     }
 
     if (!move_uploaded_file($_FILES["audio"]["tmp_name"], $audioDest)) {
-        throw new Exception("Gagal Menyimpan File Audio Ke Server");
+        throw new Exception("Could not save the audio file on the server.");
     }
 
     $pdo->prepare("
@@ -91,11 +92,11 @@ try {
     $trackId = (int) $pdo->lastInsertId();
 
     $pdo->commit();
-    json_response(true, "Lagu Berhasil Diunggah Ke TUNYX!", ["track_id" => $trackId, "visibility" => $visibility], 201);
+    json_response(true, "Song uploaded!", ["track_id" => $trackId, "visibility" => $visibility], 201);
 
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     if (is_file($audioDest)) @unlink($audioDest);
     delete_upload($coverPath);
-    json_response(false, "Upload Gagal T^T: " . $e->getMessage(), null, 500);
+    json_response(false, "Upload failed: " . $e->getMessage(), null, 500);
 }

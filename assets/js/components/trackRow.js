@@ -16,6 +16,9 @@ export function rowCoverHTML(t) {
   return `<span class="tr-cover">${icon('music', 20)}${img}</span>`;
 }
 
+/** Private songs get a small lock after the title (rows, cards, search). */
+export const lockHTML = (t) => (t?.visibility === 'private' ? `<span class="tr-lock" title="Private">${icon('lock', 14)}</span>` : '');
+
 /** variant: 'compact' | 'full'. index (optional) is shown only in the full variant as the row number. */
 export function trackRowHTML(t, { variant = 'full' } = {}) {
   const id = esc(t.track_id);
@@ -23,12 +26,12 @@ export function trackRowHTML(t, { variant = 'full' } = {}) {
   if (variant === 'compact') {
     return `<div class="tr tr-compact" data-track-id="${id}" tabindex="0">
       ${rowCoverHTML(t)}
-      <span class="tr-text"><span class="tr-title text-body-strong">${esc(t.title)}</span><span class="tr-artist text-caption">${esc(t.artist_name || 'Unknown Artist')}</span></span>
+      <span class="tr-text"><span class="tr-name"><span class="tr-title text-body-strong">${esc(t.title)}</span>${lockHTML(t)}</span><span class="tr-artist text-caption">${esc(t.artist_name || 'Unknown Artist')}</span></span>
       <span class="tr-time text-caption">${fmtDur(t.duration_sec)}</span>
     </div>`;
   }
   return `<div class="tr tr-full" data-track-id="${id}" tabindex="0">
-    <span class="tr-main">${rowCoverHTML(t)}<span class="tr-title text-body-strong">${esc(t.title)}</span></span>
+    <span class="tr-main">${rowCoverHTML(t)}<span class="tr-title text-body-strong">${esc(t.title)}</span>${lockHTML(t)}</span>
     <span class="tr-artist text-body">${esc(t.artist_name || 'Unknown Artist')}</span>
     <span class="tr-time text-caption">${fmtDur(t.duration_sec)}</span>
     ${heart}
@@ -79,7 +82,17 @@ export function openTrackMenu(t, anchor) {
       danger: true,
       onClick: () => openConfirmDelete({
         title: 'Delete this song?',
-        onConfirm: async () => { await api.deleteTrack(t.track_id); toast('Song deleted', 'removed'); refreshView(); },
+        onConfirm: async () => {
+          await api.deleteTrack(t.track_id);
+          // the song is gone server-side: drop it from the liked set and get it out of the player
+          const liked = new Set(store.get('likedIds'));
+          if (liked.delete(t.track_id)) store.set('likedIds', liked);
+          if (String(player.current()?.track_id) === String(t.track_id)) {
+            if (player.state.queue.length > 1) player.next(); else player.stop();
+          }
+          toast('Song deleted', 'removed');
+          refreshView();
+        },
       }),
     });
   }

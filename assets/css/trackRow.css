@@ -31,6 +31,8 @@
 .tr-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
 .tr-text { display: flex; flex-direction: column; min-width: 0; }
+.tr-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.tr-lock { flex: none; display: grid; color: var(--text-sec); }
 .tr-title, .tr-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tr-title { color: var(--text-main); }
 .tr-artist, .tr-time { color: var(--text-sec); }

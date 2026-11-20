@@ -19,13 +19,13 @@ function actionsHTML(extras) {
 }
 
 /** Header + actions + header row + rows. Used by playlist.js, liked.js, uploads.js. */
-export function renderList(el, { title, owner, tracks, label, extras = false, empty, onRename }) {
+export function renderList(el, { title, owner, tracks, label, extras = false, empty, onRename, cover }) {
   let listName = label || title;
   const total = tracks.reduce((s, t) => s + (t.duration_sec || 0), 0);
   el.innerHTML = `
     <div class="pl">
       <div class="pl-head">
-        ${rowCoverHTML(tracks[0])}
+        ${rowCoverHTML(cover || tracks[0])}
         <div class="pl-meta">
           <h1 class="pl-title text-display">${esc(title)}</h1>
           <p class="pl-owner text-title">${esc(owner)}</p>
@@ -78,6 +78,8 @@ export default {
       owner: store.get('user')?.username,
       tracks,
       extras: true,
+      // the playlist's own cover (or the backend's first-track fallback) beats the first track's art
+      cover: meta?.cover_path ? { track_id: meta.playlist_id, cover_path: meta.cover_path } : undefined,
       empty: emptyHTML('list-plus', 'Empty :(', 'Add songs from any track menu.'),
       onRename: meta ? async (title) => {
         await api.renamePlaylist(id, title);

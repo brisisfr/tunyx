@@ -5,7 +5,7 @@ require_method("GET");
 $userId  = require_login();
 $albumId = (int) ($_GET["album_id"] ?? 0);
 
-// ---- Daftar album (hanya yang punya minimal satu lagu yang boleh dilihat user ini) ----
+// ---- Album list (only albums with at least one song this user may see) ----
 if ($albumId < 1) {
     $stmt = $pdo->prepare("
         SELECT al.album_id, al.title, ar.name AS artist_name, al.release_date, al.cover_path,
@@ -24,10 +24,10 @@ if ($albumId < 1) {
         $r["track_count"] = (int) $r["track_count"];
     }
     unset($r);
-    json_response(true, "Daftar Album Berhasil Dimuat", ["albums" => $rows]);
+    json_response(true, "Albums loaded.", ["albums" => $rows]);
 }
 
-// ---- Detail album + lagu-lagunya ----
+// ---- Album detail + its songs ----
 $stmt = $pdo->prepare("
     SELECT t.track_id, t.title, ar.name AS artist_name, al.title AS album_title,
            COALESCE(t.cover_path, al.cover_path) AS cover_path, t.file_path, t.duration_sec, t.genre,
@@ -44,7 +44,7 @@ $stmt = $pdo->prepare("
 $stmt->execute(["uid" => $userId, "aid" => $albumId, "uid2" => $userId]);
 $tracks = $stmt->fetchAll();
 if (!$tracks) {
-    json_response(false, "Album Tidak Ditemukan", null, 404);
+    json_response(false, "Album not found.", null, 404);
 }
 foreach ($tracks as &$t) {
     $t["track_id"]     = (int) $t["track_id"];
@@ -64,4 +64,4 @@ $info->execute(["aid" => $albumId]);
 $album = $info->fetch();
 $album["album_id"] = (int) $album["album_id"];
 
-json_response(true, "Album Berhasil Dimuat", ["album" => $album, "tracks" => $tracks]);
+json_response(true, "Album loaded.", ["album" => $album, "tracks" => $tracks]);

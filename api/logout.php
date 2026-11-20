@@ -9,4 +9,4 @@ if (ini_get("session.use_cookies")) {
 }
 session_destroy();
 
-json_response(true, "DADAHHHHH");
+json_response(true, "Signed out.");

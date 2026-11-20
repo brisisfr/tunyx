@@ -4,4 +4,4 @@ require_method("GET");
 
 $userId = require_login();
 
-json_response(true, "Sesi aktif valid", ["user" => current_user($pdo, $userId)]);
+json_response(true, "Session is active.", ["user" => current_user($pdo, $userId)]);

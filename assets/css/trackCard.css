@@ -27,6 +27,7 @@
   margin: 20px 0 0 var(--space-8);
 }
 #view .tc-title { color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#view .tc-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
 #view .tc-time { color: var(--text-sec); }
 #view .tc-artist { margin: var(--space-4) 0 0 var(--space-8); color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

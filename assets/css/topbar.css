@@ -90,7 +90,9 @@
   color: var(--brand-lavender);
   font: 500 16px/1 var(--font-body);
   cursor: pointer;
+  overflow: hidden;
 }
+#topbar .tb-avatar img { width: 100%; height: 100%; object-fit: cover; }
 #topbar .tb-avatar:hover { color: var(--text-main); }
 
 #topbar .tb-upload {

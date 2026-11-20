@@ -3,7 +3,7 @@ require_once __DIR__ . "/helpers.php";
 $userId = require_login();
 $method = $_SERVER["REQUEST_METHOD"] ?? "GET";
 
-// ---- GET: untuk ambil data history play si user ----
+// ---- GET: this user's play history ----
 if ($method === "GET") {
     $limit = (int) ($_GET["limit"] ?? 30);
     $limit = max(1, min(100, $limit));
@@ -34,35 +34,35 @@ if ($method === "GET") {
     }
     unset($r);
 
-    json_response(true, "Riwayat Pemutaran Berhasil Dimuat", ["history" => $rows]);
+    json_response(true, "Play history loaded.", ["history" => $rows]);
 }
 
 $input  = get_json_input();
 $action = (string) ($input["action"] ?? "");
 
-// ---- Hapus semua riwayat user ini: DELETE, atau POST dengan action "clear" ----
+// ---- Clear this user's whole history: DELETE, or POST with action "clear" ----
 if ($method === "DELETE" || ($method === "POST" && $action === "clear")) {
     $del = $pdo->prepare("DELETE FROM play_history WHERE user_id = :uid");
     $del->execute(["uid" => $userId]);
-    json_response(true, "Riwayat Pemutaran Dihapus");
+    json_response(true, "Play history cleared.");
 }
 
-// ---- POST: catat satu pemutaran ----
+// ---- POST: record one play ----
 if ($method === "POST") {
     $trackId = (int) ($input["track_id"] ?? 0);
     if ($trackId < 1) {
-        json_response(false, "ID Lagu Tidak Valid", null, 422);
+        json_response(false, "Invalid song ID.", null, 422);
     }
 
     $chk = $pdo->prepare("SELECT 1 FROM tracks WHERE track_id = :tid AND (visibility = 'public' OR uploader_id = :uid)");
     $chk->execute(["tid" => $trackId, "uid" => $userId]);
     if (!$chk->fetch()) {
-        json_response(false, "Lagu Tidak Ditemukan", null, 404);
+        json_response(false, "Song not found.", null, 404);
     }
 
     $ins = $pdo->prepare("INSERT INTO play_history (user_id, track_id) VALUES (:uid, :tid)");
     $ins->execute(["uid" => $userId, "tid" => $trackId]);
-    json_response(true, "Pemutaran Tercatat", null, 201);
+    json_response(true, "Play recorded.", null, 201);
 }
 
-json_response(false, "Metode Request Tidak Diizinkan", null, 405);
+json_response(false, "Method not allowed.", null, 405);

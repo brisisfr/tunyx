@@ -52,6 +52,7 @@ export function normalizeTrack(t) {
     genre: t.genre ?? null,
     uploaded_at: t.uploaded_at ?? null,
     uploader_id: t.uploader_id ?? null,
+    visibility: t.visibility ?? 'public',
   };
   trackCache.set(n.track_id, n);
   return n;
@@ -113,8 +114,13 @@ export const api = {
     return r;
   },
 
-  // needs backend: api/songs.php {action:'delete', track_id} (owner only)
+  // owner only; the server also drops the row from likes/playlists/history (FK cascade)
   deleteTrack: (track_id) => postJson('api/songs.php', { action: 'delete', track_id }),
+
+  // profile.php takes JSON ({username}, {action:'remove_avatar'}) or multipart (username + avatar file)
+  updateProfile: (data) => (data instanceof FormData
+    ? request('api/profile.php', { method: 'POST', body: data })
+    : postJson('api/profile.php', data)),
 
   // needs backend: api/songs.php?mine=1 and uploader_id on the rows
   getMyUploads: async () => {

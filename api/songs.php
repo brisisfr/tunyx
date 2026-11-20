@@ -1,8 +1,46 @@
 <?php
 require_once __DIR__ . "/helpers.php";
-require_method("GET");
+require_method(["GET", "POST"]);
 
 $userId = require_login();
+
+// ---- POST: delete a song (owner only) ----
+if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
+    $input   = get_json_input();
+    $action  = (string) ($input["action"] ?? "");
+    $trackId = (int) ($input["track_id"] ?? 0);
+
+    if ($action !== "delete") {
+        json_response(false, "Unknown action.", null, 422);
+    }
+
+    $stmt = $pdo->prepare("SELECT file_path, cover_path FROM tracks WHERE track_id = :id AND uploader_id = :uid");
+    $stmt->execute(["id" => $trackId, "uid" => $userId]);
+    $track = $stmt->fetch();
+    if (!$track) {
+        json_response(false, "Song not found.", null, 404);
+    }
+
+    // likes, playlist_tracks, and play_history cascade on delete in the schema.
+    $pdo->prepare("DELETE FROM tracks WHERE track_id = :id AND uploader_id = :uid")
+        ->execute(["id" => $trackId, "uid" => $userId]);
+
+    delete_upload($track["file_path"]);
+
+    // Only delete the cover if no other track or album still uses it.
+    if ($track["cover_path"]) {
+        $usedTrack = $pdo->prepare("SELECT 1 FROM tracks WHERE cover_path = :cp LIMIT 1");
+        $usedTrack->execute(["cp" => $track["cover_path"]]);
+        $usedAlbum = $pdo->prepare("SELECT 1 FROM albums WHERE cover_path = :cp LIMIT 1");
+        $usedAlbum->execute(["cp" => $track["cover_path"]]);
+        if (!$usedTrack->fetch() && !$usedAlbum->fetch()) {
+            delete_upload($track["cover_path"]);
+        }
+    }
+
+    json_response(true, "Song deleted.");
+}
+
 $q      = trim((string) ($_GET["q"] ?? ""));
 $genre  = trim((string) ($_GET["genre"] ?? ""));
 $liked  = ($_GET["liked"] ?? "") === "1";
@@ -62,7 +100,7 @@ foreach ($tracks as &$t) {
 }
 unset($t);
 
-json_response(true, "Daftar Lagu Berhasil Dimuat", [
+json_response(true, "Songs loaded.", [
     "tracks" => $tracks,
     "count"  => count($tracks)
 ]);

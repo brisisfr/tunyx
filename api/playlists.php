@@ -8,18 +8,18 @@ function owned_playlist(PDO $pdo, int $playlistId, int $userId): array {
     $s->execute(["pid" => $playlistId, "uid" => $userId]);
     $row = $s->fetch();
     if (!$row) {
-        json_response(false, "Playlist Tidak Ditemukan", null, 404);
+        json_response(false, "Playlist not found.", null, 404);
     }
     return $row;
 }
 
 function valid_title(string $title): void {
     if ($title === "" || mb_strlen($title) > 100) {
-        json_response(false, "Nama Playlist Wajib Diisi (maksimal 100 karakter)", null, 422);
+        json_response(false, "Playlist name is required (max 100 characters).", null, 422);
     }
 }
 
-// ---- GET: daftar playlist (cover otomatis dari lagu pertama kalau belum ada cover sendiri) ----
+// ---- GET: playlist list (cover falls back to the first song's cover) ----
 if ($method === "GET") {
     $stmt = $pdo->prepare("
         SELECT p.playlist_id, p.title, p.created_at, COUNT(pt.track_id) AS track_count,
@@ -44,20 +44,20 @@ if ($method === "GET") {
         $r["track_count"] = (int) $r["track_count"];
     }
     unset($r);
-    json_response(true, "Daftar Playlist Berhasil Dimuat", ["playlists" => $rows]);
+    json_response(true, "Playlists loaded.", ["playlists" => $rows]);
 }
 
 $input      = get_json_input();
 $action     = (string) ($input["action"] ?? "");
 $playlistId = (int) ($input["playlist_id"] ?? $_GET["playlist_id"] ?? 0);
 
-// ---- Hapus playlist: DELETE, atau POST action "delete" (konfirmasi dilakukan di frontend) ----
+// ---- Delete playlist: DELETE, or POST action "delete" (confirmation is in the frontend) ----
 if ($method === "DELETE" || ($method === "POST" && $action === "delete")) {
     $pl = owned_playlist($pdo, $playlistId, $userId);
     $pdo->prepare("DELETE FROM playlists WHERE playlist_id = :pid AND user_id = :uid")
         ->execute(["pid" => $playlistId, "uid" => $userId]);
     delete_upload($pl["cover_path"]);
-    json_response(true, "Playlist Berhasil Dihapus");
+    json_response(true, "Playlist deleted.");
 }
 
 if ($method === "POST" && $action === "rename") {
@@ -66,23 +66,27 @@ if ($method === "POST" && $action === "rename") {
     valid_title($title);
     $pdo->prepare("UPDATE playlists SET title = :t WHERE playlist_id = :pid AND user_id = :uid")
         ->execute(["t" => $title, "pid" => $playlistId, "uid" => $userId]);
-    json_response(true, "Nama Playlist Berhasil Diubah", ["title" => $title]);
+    json_response(true, "Playlist renamed.", ["title" => $title]);
 }
 
-// ---- Ganti cover playlist: POST multipart dengan action "cover" dan file "cover" ----
+// ---- Change playlist cover: POST multipart with action "cover" and a "cover" file ----
 if ($method === "POST" && $action === "cover") {
     $pl = owned_playlist($pdo, $playlistId, $userId);
     if (!isset($_FILES["cover"])) {
-        json_response(false, "File Cover Wajib Dipilih", null, 422);
+        json_response(false, "Please choose a cover image.", null, 422);
     }
     $path = save_image($_FILES["cover"], "covers", "pl");
     $pdo->prepare("UPDATE playlists SET cover_path = :cp WHERE playlist_id = :pid AND user_id = :uid")
         ->execute(["cp" => $path, "pid" => $playlistId, "uid" => $userId]);
     delete_upload($pl["cover_path"]);
-    json_response(true, "Cover Playlist Berhasil Diubah", ["cover_path" => $path]);
+    json_response(true, "Playlist cover updated.", ["cover_path" => $path]);
 }
 
-// ---- POST: buat playlist baru (cover opsional lewat multipart) ----
+// ---- POST: create a new playlist (optional cover via multipart) ----
+if ($method === "POST" && $action !== "") {
+    json_response(false, "Unknown action", null, 422);
+}
+
 if ($method === "POST") {
     $title = trim((string) ($input["title"] ?? ""));
     valid_title($title);
@@ -90,9 +94,9 @@ if ($method === "POST") {
         ? save_image($_FILES["cover"], "covers", "pl") : null;
     $pdo->prepare("INSERT INTO playlists (user_id, title, cover_path) VALUES (:uid, :title, :cp)")
         ->execute(["uid" => $userId, "title" => $title, "cp" => $coverPath]);
-    json_response(true, "Playlist Baru Berhasil Dibuat", [
+    json_response(true, "Playlist created.", [
         "playlist_id" => (int) $pdo->lastInsertId()
     ], 201);
 }
 
-json_response(false, "Metode Request Tidak Diizinkan", null, 405);
+json_response(false, "Method not allowed.", null, 405);

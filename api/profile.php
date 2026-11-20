@@ -10,14 +10,14 @@ $me     = current_user($pdo, $userId);
 if ($action === "remove_avatar") {
     $pdo->prepare("UPDATE users SET avatar_path = NULL WHERE user_id = :id")->execute(["id" => $userId]);
     delete_upload($me["avatar_path"]);
-    json_response(true, "Foto Profil Dihapus", ["user" => current_user($pdo, $userId)]);
+    json_response(true, "Profile photo removed.", ["user" => current_user($pdo, $userId)]);
 }
 
 $newName   = array_key_exists("username", $input) ? trim((string) $input["username"]) : null;
 $hasAvatar = isset($_FILES["avatar"]) && $_FILES["avatar"]["error"] === UPLOAD_ERR_OK;
 
 if ($newName === null && !$hasAvatar) {
-    json_response(false, "Tidak Ada Perubahan Yang Dikirim", null, 422);
+    json_response(false, "No changes were sent.", null, 422);
 }
 
 if ($newName !== null && $newName !== $me["username"]) {
@@ -27,7 +27,7 @@ if ($newName !== null && $newName !== $me["username"]) {
     $dup = $pdo->prepare("SELECT 1 FROM users WHERE username = :u AND user_id <> :id");
     $dup->execute(["u" => $newName, "id" => $userId]);
     if ($dup->fetch()) {
-        json_response(false, "Username Sudah Dipakai Orang Lain", null, 409);
+        json_response(false, "That username is already taken.", null, 409);
     }
 }
 
@@ -45,9 +45,9 @@ try {
 } catch (PDOException $e) {
     delete_upload($newAvatar);
     if ($e->getCode() === "23000") {
-        json_response(false, "Username Sudah Dipakai Orang Lain", null, 409);
+        json_response(false, "That username is already taken.", null, 409);
     }
     throw $e;
 }
 
-json_response(true, "Profil Berhasil Diperbarui", ["user" => current_user($pdo, $userId)]);
+json_response(true, "Profile updated.", ["user" => current_user($pdo, $userId)]);

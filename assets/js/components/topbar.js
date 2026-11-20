@@ -5,7 +5,9 @@ import { store } from '../store.js';
 import { player } from '../player.js';
 import { api } from '../api.js';
 import { icon } from '../icons.js';
-import { esc, debounce } from '../util.js';
+import { esc, debounce, assetUrl } from '../util.js';
+import { lockHTML } from './trackRow.js';
+import { openProfileModal } from './modals.js';
 import { logout } from '../session.js';
 
 const MAX = 5;
@@ -72,7 +74,7 @@ export function mountTopbar(el) {
       active = -1;
       drop.innerHTML = found.length
         ? found.map((t) => `<button class="tb-row" type="button">
-            <span class="tb-row-title text-body">${mark(t.title, q)}</span>
+            <span class="tb-row-title text-body">${mark(t.title, q)}</span>${lockHTML(t)}
             <span class="tb-row-artist text-body">${mark(t.artist_name, q)}</span>
           </button>`).join('')
         : `<div class="tb-row tb-row-none text-body">No results</div>`;
@@ -113,15 +115,21 @@ export function mountTopbar(el) {
     input.blur();
   });
 
-  // ---- avatar + profile menu (first row = who you are, second = log out) ----
+  // ---- avatar + profile menu (who you are, edit profile, log out) ----
   const paintUser = () => {
     const u = store.get('user');
-    avatar.textContent = (u?.username || '?').slice(0, 1).toUpperCase();
+    avatar.innerHTML = u?.avatar_path
+      ? `<img src="${esc(assetUrl(u.avatar_path))}" alt="">`
+      : esc((u?.username || '?').slice(0, 1).toUpperCase());
     menu.innerHTML = `
       <div class="tb-mi tb-mi-head">
         <span class="tb-mi-icon">${icon('user', 20)}</span>
         <span class="tb-mi-text">${esc(u?.username || 'Profile')}</span>
       </div>
+      <button class="tb-mi" type="button" role="menuitem" data-edit-profile>
+        <span class="tb-mi-icon">${icon('settings', 20)}</span>
+        <span class="tb-mi-text">Edit profile</span>
+      </button>
       <button class="tb-mi" type="button" role="menuitem" data-logout>
         <span class="tb-mi-icon">${icon('log-out', 20)}</span>
         <span class="tb-mi-text">Log Out</span>
@@ -132,7 +140,10 @@ export function mountTopbar(el) {
 
   const setMenu = (open) => { menu.hidden = !open; avatar.setAttribute('aria-expanded', String(open)); };
   avatar.addEventListener('click', () => setMenu(menu.hidden));
-  menu.addEventListener('click', (e) => { if (e.target.closest('[data-logout]')) { setMenu(false); logout(); } });
+  menu.addEventListener('click', (e) => {
+    if (e.target.closest('[data-edit-profile]')) { setMenu(false); openProfileModal(); return; }
+    if (e.target.closest('[data-logout]')) { setMenu(false); logout(); }
+  });
 
   el.querySelector('.tb-upload').addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('tunyx:open-upload'));

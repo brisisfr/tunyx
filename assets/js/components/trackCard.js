@@ -2,13 +2,13 @@
 // Home "Discover Songs" and the Explore row both use it. Click (or Enter) plays from the row it sits in.
 import { player } from '../player.js';
 import { esc, fmtDur } from '../util.js';
-import { rowCoverHTML, openTrackMenu } from './trackRow.js';
+import { rowCoverHTML, openTrackMenu, lockHTML } from './trackRow.js';
 
 export function trackCardHTML(t) {
   return `<div class="tc" data-track-id="${esc(t.track_id)}" role="button" tabindex="0" aria-label="Play ${esc(t.title)}">
     ${rowCoverHTML(t)}
     <span class="tc-row">
-      <span class="tc-title text-body-strong">${esc(t.title)}</span>
+      <span class="tc-name"><span class="tc-title text-body-strong">${esc(t.title)}</span>${lockHTML(t)}</span>
       <span class="tc-time text-caption">${fmtDur(t.duration_sec)}</span>
     </span>
     <span class="tc-artist text-caption">${esc(t.artist_name || 'Unknown Artist')}</span>

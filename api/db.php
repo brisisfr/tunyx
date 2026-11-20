@@ -19,7 +19,7 @@ try {
     header("Content-Type: application/json; charset=utf-8");
     echo json_encode([
         "success" => false,
-        "message" => "Koneksi Dengan Database GAGAL Yaaa Sayangkuuuu: " . $e->getMessage()
+        "message" => "Could not connect to the database."
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }

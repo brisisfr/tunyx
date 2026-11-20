@@ -8,7 +8,7 @@ import { api } from '../api.js';
 import { icon } from '../icons.js';
 import { toast } from './toast.js';
 import { openConfirmDelete, openSimplebox } from './modals.js';
-import { refreshView } from '../util.js';
+import { refreshView, assetUrl } from '../util.js';
 import { inlineRename } from '../inlineRename.js';
 
 const NAV = [
@@ -34,7 +34,7 @@ function rowsHTML(playlists) {
   return playlists.map((p) => `
     <div class="sb-pl-row" data-playlist-id="${esc(p.playlist_id)}">
       <a class="sb-pl" href="#/playlist/${encodeURIComponent(p.playlist_id)}" data-playlist-id="${esc(p.playlist_id)}" title="${esc(p.title)}">
-        <span class="sb-pl-cover"></span>
+        <span class="sb-pl-cover">${p.cover_path ? `<img src="${esc(assetUrl(p.cover_path))}" alt="" loading="lazy" onerror="this.remove()">` : ''}</span>
         <span class="sb-pl-text">
           <span class="sb-pl-title text-body-strong">${esc(p.title)}</span>
           <span class="sb-pl-sub text-caption">Playlist</span>

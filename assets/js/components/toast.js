@@ -1,4 +1,4 @@
-// Toast (Figma Toasts_alert): toast(message, type). type: 'error' | 'liked' | 'playlist' | 'removed' | undefined.
+// Toast (Figma Toasts_alert): toast(message, type). type: 'error' | 'liked' | 'playlist' | 'removed' | 'success' | undefined.
 import { icon } from '../icons.js';
 import { esc } from '../util.js';
 
@@ -7,6 +7,7 @@ const TYPES = {
   liked:    { title: 'Liked!',            icon: 'heart' },
   playlist: { title: 'New Playlist!',     icon: 'list-plus' },
   removed:  { title: 'Removed Playlist!', icon: 'list-plus' },
+  success:  { title: 'Success!',          icon: 'check' },
   info:     { title: 'Done!',             icon: 'list-music' },
 };
 const MAX = 3;

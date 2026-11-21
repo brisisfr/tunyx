@@ -1,15 +1,32 @@
-// Live spectrum equalizer + gradient seek bar for Now Playing. Port of visualizer_proto (values: claude/visualizer-spec.md).
-// mountVisualizer({ viz, bar, time }) -> destroy(). viz/bar are <canvas>, time is an element for "m:ss / m:ss".
+// Live spectrum equalizer v2: a full-window overlay canvas shown on Now Playing.
+// mountVisualizer({ canvas }) -> destroy(). The canvas is position:fixed (see nowPlaying.css), so the bars cross
+// the sidebar, Main and Up next, sit on top of the player bar, and never block clicks (pointer-events:none).
+// Progress is shown by the bars lighting up left to right, read from the <audio> element; seeking lives in the
+// player bar (.pb-progress), so this file has no pointer handling at all.
 // The Web Audio graph is built ONCE for the app's single <audio> (createMediaElementSource only works once per element),
 // and only inside a user gesture, because a graph attached to a suspended context would silence the music.
 import { player } from '../player.js';
-import { fmtTime } from '../util.js';
 
-const BARS = 32, MIN_H = 10, MAX_H = 100, PAD = 14, BAR_H = 3;
+// ---- tweakable look (all the "flashy" numbers live here) ----
+const BARS = 32;
+const MIN_H = 14;               // px, height of a silent pill
+const MAX_FRAC = 0.85;          // tallest pill = this fraction of the canvas height
+const LEVEL_EXP = 1.35;         // lower = more reactive to quiet sounds (v1: 1.7)
+const ATTACK = 0.75;            // how fast bars rise (v1: 0.6)
+const RELEASE = 0.22;           // how fast bars fall (v1: 0.15)
+const KICK_GAIN = 0.6;          // extra height on a bass hit (v1: 0.35)
+const KICK_THRESHOLD = 0.08;    // unchanged
+const GLOW_BASE = 12, GLOW_KICK = 26;
+const SPAN_L = 0.08, SPAN_R = 0.92;                  // horizontal extent of the row, as a fraction of the window
+const BAR_W_MIN = 10, BAR_W_MAX = 28, BAR_W_FRAC = 0.5;   // BAR_W = clamp(MIN, vw / BARS * FRAC, MAX)
+const PAD_TOP = 44;             // room above the tallest pill so the glow isn't clipped
+const PAD_BOTTOM = 2;
+const DPR_CAP = 2;
+const CYCLE_SPEED = 0.15;       // gradient cycles per second
+const DIM = 'rgba(110, 103, 148, 0.55)';           // #6e6794 at ~0.55 so the cover shows through
+
 const LO_BIN = 2, HI_BIN = 372;                       // ~43 Hz .. ~8 kHz at fftSize 2048
 const COLORS = ['#bc74e2', '#A493F0', '#55C9D8'];     // lavender, indigo, azure
-const DIM = '#6e6794';
-const CYCLE_SPEED = 0.15;                             // gradient cycles per second
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---- audio graph (module level: survives the view being re-mounted) ----
@@ -52,54 +69,27 @@ function colorAt(x, s, P) {
   return `rgb(${a.map((v, k) => Math.round(v + (b[k] - v) * t)).join(',')})`;
 }
 
-export function mountVisualizer({ viz, bar, time }) {
-  const g = viz.getContext('2d');
-  const bg = bar.getContext('2d');
+export function mountVisualizer({ canvas }) {
+  const g = canvas.getContext('2d');
   const audio = player.getAudio();
   const smooth = new Array(BARS).fill(0);
   let avgBass = 0, kick = 0, raf = 0, dead = false;
-  let dragging = false, dragFrac = 0;
-  let vw = 0, vh = 0, bw = 0, bh = 0;
+  let vw = 0, vh = 0, dirty = true;
 
-  // keep the canvases crisp: CSS size * devicePixelRatio, drawing in CSS pixels
-  function fit(c, ctx2) {
-    const r = c.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
-    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
-      c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
-    }
-    ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return [w, h];
+  // keep the canvas crisp: CSS size * devicePixelRatio (capped), drawing in CSS pixels
+  function fit() {
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.min(DPR_CAP, window.devicePixelRatio || 1);
+    vw = Math.max(1, Math.round(r.width)); vh = Math.max(1, Math.round(r.height));
+    const pw = Math.round(vw * dpr), ph = Math.round(vh * dpr);
+    if (canvas.width !== pw || canvas.height !== ph) { canvas.width = pw; canvas.height = ph; }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dirty = false;
   }
-
-  const fracFrom = (e) => {
-    const r = bar.getBoundingClientRect();
-    return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-  };
-  const onDown = (e) => {
-    if (!audio.duration) return;
-    dragging = true; bar.setPointerCapture?.(e.pointerId); dragFrac = fracFrom(e);
-  };
-  const onMove = (e) => { if (dragging) dragFrac = fracFrom(e); };
-  const onUp = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    player.seek(fracFrom(e) * audio.duration);
-  };
-  const onCancel = () => { dragging = false; };
-  bar.addEventListener('pointerdown', onDown);
-  bar.addEventListener('pointermove', onMove);
-  bar.addEventListener('pointerup', onUp);
-  bar.addEventListener('pointercancel', onCancel);
-  // keyboard seek on the bar: arrows +-5s
-  bar.tabIndex = 0;
-  bar.setAttribute('role', 'slider');
-  bar.setAttribute('aria-label', 'Seek');
-  bar.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight') { player.seek(audio.currentTime + 5); e.preventDefault(); }
-    if (e.key === 'ArrowLeft') { player.seek(audio.currentTime - 5); e.preventDefault(); }
-  });
+  const markDirty = () => { dirty = true; };
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(markDirty) : null;
+  ro?.observe(canvas);
+  window.addEventListener('resize', markDirty);
 
   // the first click/keypress anywhere builds the audio graph (no-op once built)
   const gesture = () => ensureAudioGraph();
@@ -111,29 +101,30 @@ export function mountVisualizer({ viz, bar, time }) {
     if (dead) return;
     raf = requestAnimationFrame(draw);
     if (document.hidden) return;
-    [vw, vh] = fit(viz, g);
-    [bw, bh] = fit(bar, bg);
+    if (dirty) fit();
     g.clearRect(0, 0, vw, vh);
     if (analyser) analyser.getByteFrequencyData(data);
 
-    const actual = audio.duration ? audio.currentTime / audio.duration : 0;
-    const progress = dragging ? dragFrac : actual;
+    const progress = audio.duration ? audio.currentTime / audio.duration : 0;
     const lit = progress * BARS;
 
     let bass = 0;
     for (let i = 0; i < 4; i++) bass += smooth[i] / 4;
     avgBass += (bass - avgBass) * 0.02;
-    const spike = Math.max(0, bass - avgBass - 0.08);
+    const spike = Math.max(0, bass - avgBass - KICK_THRESHOLD);
     kick = Math.min(1, Math.max(kick * 0.88, spike * 3));
 
-    const P = vw;                                          // one color cycle = row width
+    const x0 = vw * SPAN_L, span = vw * (SPAN_R - SPAN_L);
+    const BAR_W = Math.min(Math.max(BAR_W_MIN, (vw / BARS) * BAR_W_FRAC, 0), BAR_W_MAX, (span / BARS) * 0.8);
+    const GAP = (span - BARS * BAR_W) / (BARS - 1);
+    const maxH = Math.min(vh - PAD_TOP - PAD_BOTTOM, vh * MAX_FRAC);
+    const base = vh - PAD_BOTTOM;
+
+    const P = span;                                        // one color cycle = row width
     const phase = reduceMotion ? 0 : (performance.now() / 1000 * CYCLE_SPEED) % 1;
     const s = -P + phase * P;
-    const grad = g.createLinearGradient(s, 0, s + 2 * P, 0);
+    const grad = g.createLinearGradient(x0 + s, 0, x0 + s + 2 * P, 0);
     for (let n = 0; n <= 6; n++) grad.addColorStop(n / 6, COLORS[n % 3]);
-
-    const BAR_W = Math.min(10, (vw / BARS) * 0.55);
-    const GAP = (vw - BARS * BAR_W) / (BARS - 1);
 
     for (let i = 0; i < BARS; i++) {
       const f = BARS - 1 - i;                              // bass on the right
@@ -143,68 +134,37 @@ export function mountVisualizer({ viz, bar, time }) {
         const b = Math.max(a + 1, Math.floor(LO_BIN * Math.pow(HI_BIN / LO_BIN, (i + 1) / BARS)));
         let sum = 0;
         for (let k = a; k < b; k++) sum += data[k];
-        level = Math.pow(sum / (b - a) / 255, 1.7);
+        level = Math.pow(sum / (b - a) / 255, LEVEL_EXP);
       }
       const prev = smooth[i];
-      smooth[i] = level > prev ? prev + (level - prev) * 0.6 : prev + (level - prev) * 0.15;
+      smooth[i] = level > prev ? prev + (level - prev) * ATTACK : prev + (level - prev) * RELEASE;
       level = smooth[i];
-      const h = Math.min(vh - PAD * 2, (MIN_H + level * (MAX_H - MIN_H)) * (1 + kick * 0.35));
-      const x = f * (BAR_W + GAP), y = vh - PAD - h;
+      const h = Math.min(vh - PAD_TOP - PAD_BOTTOM, (MIN_H + level * (maxH - MIN_H)) * (1 + kick * KICK_GAIN));
+      const x = x0 + f * (BAR_W + GAP), y = base - h;
       const fa = Math.min(1, Math.max(0, lit - f));        // how much of this pill is lit
 
-      if (fa > 0) {                                        // glow pass (swells on kicks)
+      g.fillStyle = DIM;                                   // translucent dim pill, always
+      g.beginPath(); g.roundRect(x, y, BAR_W, h, BAR_W / 2); g.fill();
+
+      if (fa > 0) {                                        // lit pill: opaque gradient + glow that swells on kicks
         g.save();
-        g.shadowColor = colorAt(x + BAR_W / 2, s, P);
-        g.shadowBlur = 8 + kick * 14;
-        g.globalAlpha = fa;
-        g.fillStyle = DIM;
+        g.shadowColor = colorAt(x + BAR_W / 2 - x0, s, P);
+        g.shadowBlur = GLOW_BASE + kick * GLOW_KICK;
+        g.globalAlpha = fa;                                // the one partial pill fades in
+        g.fillStyle = grad;
         g.beginPath(); g.roundRect(x, y, BAR_W, h, BAR_W / 2); g.fill();
         g.restore();
       }
-      g.fillStyle = DIM;                                   // dim pill, always
-      g.beginPath(); g.roundRect(x, y, BAR_W, h, BAR_W / 2); g.fill();
-      if (fa > 0) {                                        // lit color, clipped to the pill, left part only
-        g.save(); g.clip();
-        g.fillStyle = grad;
-        g.fillRect(x, y, BAR_W * fa, h);
-        g.restore();
-      }
     }
-
-    // thin seek bar
-    bg.clearRect(0, 0, bw, bh);
-    const by = (bh - BAR_H) / 2;
-    if (progress > 0) {
-      bg.save();
-      bg.shadowColor = colorAt(bw * progress, s, P);
-      bg.shadowBlur = 6;
-      bg.fillStyle = DIM;
-      bg.beginPath(); bg.roundRect(0, by, Math.max(BAR_H, bw * progress), BAR_H, BAR_H / 2); bg.fill();
-      bg.restore();
-    }
-    bg.fillStyle = DIM;
-    bg.beginPath(); bg.roundRect(0, by, bw, BAR_H, BAR_H / 2); bg.fill();
-    bg.save();
-    bg.beginPath(); bg.roundRect(0, by, bw, BAR_H, BAR_H / 2); bg.clip();
-    bg.fillStyle = grad;
-    bg.fillRect(0, by, bw * progress, BAR_H);
-    bg.restore();
-
-    const dur = audio.duration || 0;
-    const label = `${fmtTime(dragging ? dragFrac * dur : audio.currentTime)} / ${fmtTime(dur)}`;
-    if (time && time.textContent !== label) time.textContent = label;
-    bar.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
   }
   raf = requestAnimationFrame(draw);
 
   return function destroy() {
     dead = true;
     cancelAnimationFrame(raf);
+    ro?.disconnect();
+    window.removeEventListener('resize', markDirty);
     document.removeEventListener('pointerdown', gesture, true);
     document.removeEventListener('keydown', gesture, true);
-    bar.removeEventListener('pointerdown', onDown);
-    bar.removeEventListener('pointermove', onMove);
-    bar.removeEventListener('pointerup', onUp);
-    bar.removeEventListener('pointercancel', onCancel);
   };
 }

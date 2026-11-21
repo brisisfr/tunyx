@@ -22,7 +22,7 @@ export async function mockRequest(path, { method = 'GET', body } = {}) {
   const name = url.pathname.split('/').pop().replace('.php', '');
   const q = url.searchParams;
   const m = method.toUpperCase();
-  const json = () => { try { return JSON.parse(body); } catch { return {}; } };
+  const json = () => { try { return typeof body === 'string' ? JSON.parse(body) : {}; } catch { return {}; } };
 
   if (name === 'login' || name === 'register') {
     const b = json();
@@ -65,13 +65,44 @@ export async function mockRequest(path, { method = 'GET', body } = {}) {
 
     case 'playlists': {
       if (m === 'POST') {
-        const title = (json().title || '').trim();
+        const b = json();
+        if (body instanceof FormData) {
+          b.action = body.get('action');
+          b.playlist_id = Number(body.get('playlist_id'));
+        }
+        if (b.action === 'delete') {
+          const pid = Number(b.playlist_id);
+          playlists = playlists.filter((p) => p.playlist_id !== pid);
+          delete plTracks[pid];
+          return null;
+        }
+        if (b.action === 'rename') {
+          const pid = Number(b.playlist_id);
+          const p = playlists.find((x) => x.playlist_id === pid);
+          if (!p) throw new ApiError(404, 'Playlist not found');
+          p.title = String(b.title || '').trim();
+          if (!p.title) throw new ApiError(422, 'Title is required');
+          return { playlist_id: pid, title: p.title };
+        }
+        if (b.action === 'cover') {
+          const pid = Number(b.playlist_id);
+          const p = playlists.find((x) => x.playlist_id === pid);
+          if (!p) throw new ApiError(404, 'Playlist not found');
+          const file = body instanceof FormData ? body.get('cover') : null;
+          p.cover_path = file ? `uploads/covers/mock_playlist_${pid}_${Date.now()}.jpg` : p.cover_path;
+          return { cover_path: p.cover_path };
+        }
+        const title = (b.title || '').trim();
         if (!title) throw new ApiError(422, 'Title is required');
         const p = { playlist_id: nextPl++, title, created_at: new Date().toISOString(), track_count: 0 };
         playlists.unshift(p); plTracks[p.playlist_id] = [];
         return { playlist_id: p.playlist_id, title };
       }
-      return { playlists: playlists.map((p) => ({ ...p, track_count: (plTracks[p.playlist_id] || []).length })) };
+      return { playlists: playlists.map((p) => {
+        const list = plTracks[p.playlist_id] || [];
+        const covers = [...new Set(list.map((t) => t.cover_path).filter(Boolean))].slice(0, 4);
+        return { ...p, track_count: list.length, covers };
+      }) };
     }
 
     case 'playlists_tracks': case 'playlist_tracks': {

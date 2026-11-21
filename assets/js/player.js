@@ -134,6 +134,36 @@ export const player = {
     emit();
     toast(`Added “${track.title}” to the queue`);
   },
+  removeFromQueue(index) {
+    const i = Number(index);
+    if (!Number.isInteger(i) || i < 0 || i >= s.queue.length) return;
+
+    if (i === s.index) {
+      s.queue.splice(i, 1);
+      if (s.queue.length) {
+        if (i < s.queue.length) load(i);
+        else load(s.queue.length - 1);
+      } else {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+        s.playing = false;
+        s.queue = [];
+        s.index = -1;
+      }
+    } else {
+      s.queue.splice(i, 1);
+      if (i < s.index) s.index--;
+      emit();
+    }
+    toast('Removed from queue', 'removed');
+  },
+  clearQueue() {
+    if (s.index >= 0) s.queue = s.queue.slice(0, s.index + 1);
+    else s.queue = [];
+    emit();
+    toast('Queue cleared', 'info');
+  },
   stop() {
     audio.pause(); audio.removeAttribute('src'); audio.load();
     s.queue = []; s.index = -1; s.playing = false; s.label = '';

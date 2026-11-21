@@ -13,7 +13,7 @@
   outline: none;
   min-width: 0;
 }
-.tr:hover, .tr:focus-visible, .tr.is-playing { background: var(--bg-elevated); }
+.tr:focus-visible, .tr.is-playing { background: var(--bg-elevated); }
 .tr:focus-visible { box-shadow: inset 0 0 0 1px var(--brand-lavender); }
 
 .tr-cover {
@@ -27,14 +27,15 @@
   color: var(--text-sec);
   overflow: hidden;
 }
-.tr:hover .tr-cover, .tr.is-playing .tr-cover { background: var(--bg-base); }
+.tr.is-playing .tr-cover { background: var(--bg-base); }
 .tr-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
 .tr-text { display: flex; flex-direction: column; min-width: 0; }
 .tr-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .tr-lock { flex: none; display: grid; color: var(--text-sec); }
 .tr-title, .tr-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tr-title { color: var(--text-main); }
+/* padding + equal negative margin: the ellipsis clip box includes room for the glow */
+.tr-title { padding: 6px 14px; margin: -6px -14px; color: var(--text-main); }
 .tr-artist, .tr-time { color: var(--text-sec); }
 .tr.is-playing .tr-title { color: var(--brand-lavender); text-shadow: var(--glow-soft); }
 
@@ -63,4 +64,9 @@
 .tr-heart.is-liked { color: var(--like); }
 .tr-heart.is-liked .icon { fill: currentColor; filter: drop-shadow(0 0 6px var(--like)); }
 .tr-menu { opacity: 0; }
-.tr:hover .tr-menu, .tr:focus-within .tr-menu { opacity: 1; }
+.tr:focus-within .tr-menu { opacity: 1; }
+@media (hover: hover) {
+  .tr:hover { background: var(--bg-elevated); }
+  .tr:hover .tr-cover { background: var(--bg-base); }
+  .tr:hover .tr-menu { opacity: 1; }
+}

@@ -99,6 +99,13 @@ export const api = {
 
   // upload (multipart: title, artist_name, album_title?, genre?, duration_sec?, audio, cover?)
   upload: (formData) => request('api/upload.php', { method: 'POST', body: formData }),
+  setPlaylistCover: (playlist_id, file) => {
+    const fd = new FormData();
+    fd.append('action', 'cover');
+    fd.append('playlist_id', String(playlist_id));
+    fd.append('cover', file);
+    return request('api/playlists.php', { method: 'POST', body: fd });
+  },
 
   // ---- playlist management / uploads: UI is ready, these endpoints are not ----
   // needs backend: api/playlists.php {action:'delete', playlist_id}

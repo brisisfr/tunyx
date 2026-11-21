@@ -17,7 +17,9 @@
 #view .tc:focus-visible { box-shadow: inset 0 0 0 1px var(--brand-lavender); }
 
 #view .tc .tr-cover { width: 200px; height: 200px; }
-#view .tc:hover .tr-cover { background: var(--bg-base); }
+@media (hover: hover) {
+  #view .tc:hover .tr-cover { background: var(--bg-base); }
+}
 
 /* title row: title column 127 wide so the time starts at x145; both start on the same top edge */
 #view .tc-row {
@@ -26,7 +28,8 @@
   align-items: start;
   margin: 20px 0 0 var(--space-8);
 }
-#view .tc-title { color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* padding + equal negative margin: the ellipsis clip box includes room for the glow */
+#view .tc-title { padding: 6px 14px; margin: -6px -14px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #view .tc-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
 #view .tc-time { color: var(--text-sec); }
 #view .tc-artist { margin: var(--space-4) 0 0 var(--space-8); color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

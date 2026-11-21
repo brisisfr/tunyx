@@ -23,6 +23,7 @@ function valid_title(string $title): void {
 if ($method === "GET") {
     $stmt = $pdo->prepare("
         SELECT p.playlist_id, p.title, p.created_at, COUNT(pt.track_id) AS track_count,
+               p.cover_path AS own_cover_path,
                COALESCE(p.cover_path, (
                    SELECT COALESCE(t.cover_path, al.cover_path)
                    FROM playlist_tracks x
@@ -42,6 +43,25 @@ if ($method === "GET") {
     foreach ($rows as &$r) {
         $r["playlist_id"] = (int) $r["playlist_id"];
         $r["track_count"] = (int) $r["track_count"];
+        $coverStmt = $pdo->prepare("
+            SELECT COALESCE(t.cover_path, al.cover_path) AS cover_path
+            FROM playlist_tracks pt
+            INNER JOIN tracks t ON t.track_id = pt.track_id
+            LEFT JOIN albums al ON al.album_id = t.album_id
+            WHERE pt.playlist_id = :pid
+              AND COALESCE(t.cover_path, al.cover_path) IS NOT NULL
+            ORDER BY pt.position ASC
+        ");
+        $coverStmt->execute(["pid" => $r["playlist_id"]]);
+        $covers = [];
+        foreach ($coverStmt->fetchAll() as $coverRow) {
+            $cover = (string) $coverRow["cover_path"];
+            if ($cover !== "" && !in_array($cover, $covers, true)) {
+                $covers[] = $cover;
+            }
+            if (count($covers) === 4) break;
+        }
+        $r["covers"] = $covers;
     }
     unset($r);
     json_response(true, "Playlists loaded.", ["playlists" => $rows]);

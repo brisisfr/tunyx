@@ -1,6 +1,6 @@
 /* Top bar. Measured from "Search_bar_Extras" 1100x48 and "Search Extended" 900x288 (Deepseek Batch 1).
    Search fills the row: radius 12, bg/elevated, icon 18 at x15, placeholder x48. Cluster right: avatar 40,
-   upload 48x48, logo 68 (overflows the 48 row by 10 top/bottom). Profile menu 382x198. */
+   upload 48x48, logo 48x48. Profile menu 382x198. */
 
 #topbar .tb {
   position: relative;
@@ -102,18 +102,18 @@
   height: 48px;
   border: 0;
   border-radius: var(--radius-12);
-  background: var(--bg-elevated);
+  background: transparent;
   color: var(--text-sec);
   cursor: pointer;
 }
-#topbar .tb-upload:hover { color: var(--text-main); }
+#topbar .tb-upload:hover,
+#topbar .tb-upload:focus-visible { background: var(--bg-elevated); color: var(--text-main); }
 
-/* 68x68, vertically centred on the 48 row -> overflows 10px top and bottom */
+/* 48x48, same as the upload button */
 #topbar .tb-logo {
   flex: none;
-  width: 68px;
-  height: 68px;
-  margin: -10px 0;
+  width: 48px;
+  height: 48px;
   background: url(../img/logo.png) center / contain no-repeat;
 }
 

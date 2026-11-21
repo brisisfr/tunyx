@@ -31,6 +31,9 @@
   /* Liked heart (from the track row Figma export; no Figma variable yet) */
   --like: #ff6b8a;
 
+  /* Scrollbar thumb hover (no Figma variable) */
+  --scrollbar-hover: #3a3256;
+
   /* Fonts */
   --font-display: "Sora", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;

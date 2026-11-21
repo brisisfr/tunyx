@@ -1,9 +1,13 @@
 /* Up next (Sidebar_R). The 360px panel, 16 padding and the 24 gap between header and list
    come from shell.css; this file only lays out the header and the scrolling list. */
 .un-head { flex: none; }
+.un-heading { display: flex; align-items: center; justify-content: space-between; }
 .un-title, .un-from { margin: 0; }
 .un-title { color: var(--text-main); }
 .un-from { color: var(--text-sec); }
+.un-clear { padding: 0; border: 0; background: none; color: var(--text-sec); font: 400 12px/16px var(--font-body); cursor: pointer; }
+.un-clear:hover { color: var(--brand-lavender); }
+.un-clear[hidden] { display: none; }
 
 .un-list {
   flex: 1;
@@ -14,7 +18,16 @@
   gap: var(--space-8);
 }
 
-.un-row { flex: none; }
+.un-row { position: relative; flex: none; }
+.un-remove {
+  position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+  display: grid; place-items: center; width: 24px; height: 24px; padding: 0;
+  border: 0; background: var(--bg-surface); color: var(--text-sec); cursor: pointer;
+  opacity: 0;
+}
+.un-row:focus-within .un-remove { opacity: 1; }
+.un-row:hover .un-remove { opacity: 1; }
+.un-row:hover .tr-time { opacity: 0; }
 
 /* panel content width = 360 - 2*16 padding; compact rows grow from their 280 default */
 .un-list .tr-compact { max-width: 328px; }

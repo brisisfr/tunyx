@@ -1,28 +1,34 @@
-/* Now Playing (Figma Playing 28:163). Text and cover inset 10px like the other views.
-   Cover is 700x450 (radius 16) but shrinks on short windows so the equalizer stays visible; the view scrolls if still too tall. */
-#view .view-playing .np { max-width: 720px; }
-#view .view-playing .np-label { margin: 8px 0 0 10px; color: var(--text-sec); }
+/* Now Playing (Figma Playing 28:163). The page itself never scrolls: label, title and artist keep their height
+   and the cover takes whatever is left of Main. The equalizer is a separate full-window overlay (.np-overlay). */
+#view:has(.view-playing) { overflow: hidden; }          /* no scrollbar on this page */
+#view .view-playing { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+#view .view-playing .np { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+
+#view .view-playing .np-label { flex: none; margin: 8px 0 0 10px; color: var(--text-sec); }
 #view .view-playing .np-title {
+  flex: none;
   margin: 16px 10px 0 10px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   overflow-wrap: anywhere;
 }
-#view .view-playing .np-artist { margin: var(--space-8) 0 0 10px; color: var(--text-sec); }
+#view .view-playing .np-artist { flex: none; margin: var(--space-8) 0 0 10px; color: var(--text-sec); }
 
+/* big cover: fills Main's width (Figma ~88%, radius 16) and the remaining height; object-fit cover crops it */
 #view .view-playing .np-cover {
   position: relative; display: grid; place-items: center; overflow: hidden;
-  margin: var(--space-24) 0 0 10px;
-  --np-h: clamp(220px, calc(100dvh - 520px), 450px);      /* shrinks on short windows */
-  width: min(700px, calc(100% - 10px), calc(var(--np-h) * 700 / 450));
-  aspect-ratio: 700 / 450;
+  flex: 1 1 auto; min-height: 160px;
+  margin: var(--space-24) 0 var(--space-16) 10px;
+  width: calc(100% - 10px);
   border-radius: var(--radius-16);
   background: var(--bg-elevated); color: var(--text-sec);
 }
 #view .view-playing .np-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-
-#view .view-playing .np-stage { margin: var(--space-16) 0 var(--space-16) 10px; width: min(700px, calc(100% - 10px)); }
-#view .view-playing .np-viz { display: block; width: 100%; height: 140px; }
-#view .view-playing .np-bar { display: block; width: 100%; height: 32px; margin-top: -12px; touch-action: none; cursor: pointer; outline: 0; }
-#view .view-playing .np-bar:focus-visible { box-shadow: 0 0 0 1px var(--brand-lavender); border-radius: 4px; }
-#view .view-playing .np-time { margin-top: 4px; color: var(--text-sec); font-variant-numeric: tabular-nums; }
 #view .view-playing .empty { margin: 24px 0 0 10px; }
+
+/* equalizer overlay: above sidebar/Main/Up next (and the player bar's glow), below the drawer 800, modals 900,
+   simplebox 950 and toasts 1000. Its bottom edge sits on the player bar. Clicks pass straight through. */
+.np-overlay {
+  position: fixed; left: 0; right: 0; bottom: var(--playerbar-h, 68px);
+  width: 100%; height: min(46vh, 520px);
+  pointer-events: none; z-index: 700;
+}

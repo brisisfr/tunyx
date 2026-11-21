@@ -90,7 +90,7 @@ export function openTrackMenu(t, anchor) {
           if (String(player.current()?.track_id) === String(t.track_id)) {
             if (player.state.queue.length > 1) player.next(); else player.stop();
           }
-          toast('Song deleted', 'removed');
+          toast('Song deleted', 'success');
           refreshView();
         },
       }),

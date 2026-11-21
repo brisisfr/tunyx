@@ -138,6 +138,21 @@
   object-fit: cover;
 }
 
+.pc-cover {
+  display: grid;
+  width: var(--pc-size);
+  height: var(--pc-size);
+  border-radius: var(--radius-8);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  color: var(--text-sec);
+}
+.pc-single { place-items: center; }
+.pc-single img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pc-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 0; }
+.pc-grid img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: cover; }
+.pc-placeholder { place-items: center; }
+
 #sidebar .sb-pl.is-active {
   background: var(--bg-elevated);
 }

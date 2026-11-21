@@ -1,21 +1,21 @@
-/* Explorer, measured from "Main" 1171x797 (Deepseek Batch 1): banner 1000x300 at a 10px inset,
-   radius 16; "Explore Songs" title 40 below the banner; cards 220 wide, 16 apart, in a scroller. */
+/* Explorer, measured from "Main" 1171x797 (Deepseek Batch 1): banner 1000x200 at a 10px inset,
+   radius 16; "Explore Songs" title 24 below the banner; cards 220 wide, 16 apart, wrapping in a grid. */
 
 #view .view-explore .ex-banner {
-  height: 300px;
+  height: 200px;
   margin: 10px 10px 0;
   border-radius: var(--radius-16);
-  background: var(--bg-elevated) url(../img/explore-banner.jpg) center / cover no-repeat;
+  background: var(--bg-elevated) url(../img/explore-banner.jpg) center 30% / cover no-repeat;
 }
 
-#view .view-explore .ex-title { margin: 40px 0 0 10px; }
+#view .view-explore .ex-title { margin: 24px 0 0 10px; }
 
 #view .view-explore .ex-cards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 220px);
   gap: 16px;
-  margin: 20px 0 0 18px;
-  padding-bottom: var(--space-4);
-  overflow-x: auto;
+  justify-content: start;
+  margin: 12px 0 0 18px;
 }
 
 #view .view-explore .empty { margin: 24px 0 0 18px; }

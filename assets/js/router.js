@@ -26,6 +26,15 @@ let cleanup = null;
 let token = 0;
 let started = false;
 
+// New content under a stationary cursor keeps the old :hover until the pointer moves again.
+// Block hit-testing for the first frame(s) and re-enable on the next pointermove.
+function resetHover(view) {
+  view.style.pointerEvents = 'none';
+  document.addEventListener('pointermove', () => {
+    view.style.pointerEvents = '';
+  }, { once: true });
+}
+
 function parse() {
   const h = location.hash.slice(1) || '/home';
   const [path, qs = ''] = h.split('?');
@@ -60,6 +69,7 @@ export async function render(keepScroll = false) {
 
   if (!match) {
     el.innerHTML = `<div class="empty">${icon('compass', 40)}<div><h3>Page not found</h3><p>That page doesn't exist.</p></div><a class="btn" href="#/home">Back home</a></div>`;
+    resetHover(view);
     return;
   }
   try {
@@ -74,6 +84,7 @@ export async function render(keepScroll = false) {
   }
   syncRows(el);
   if (top) view.scrollTop = top;
+  resetHover(view);
 }
 
 export function start() {

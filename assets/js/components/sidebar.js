@@ -30,11 +30,29 @@ function navHTML() {
     </a>`).join('');
 }
 
+export function playlistCoverHTML(p, size = 40) {
+  const ownCover = p?.own_cover_path !== undefined ? p.own_cover_path : p?.cover_path;
+  const coverPaths = Array.isArray(p?.covers)
+    ? [...new Set(p.covers.filter(Boolean))]
+    : [];
+  if (ownCover) {
+    return `<span class="pc-cover pc-single" style="--pc-size:${size}px"><img src="${esc(assetUrl(ownCover))}" alt="" loading="lazy" onerror="this.remove()"></span>`;
+  }
+  if (coverPaths.length >= 4) {
+    return `<span class="pc-cover pc-grid" style="--pc-size:${size}px">${coverPaths.slice(0, 4).map((path) =>
+      `<img src="${esc(assetUrl(path))}" alt="" loading="lazy" onerror="this.remove()">`).join('')}</span>`;
+  }
+  if (coverPaths.length) {
+    return `<span class="pc-cover pc-single" style="--pc-size:${size}px"><img src="${esc(assetUrl(coverPaths[0]))}" alt="" loading="lazy" onerror="this.remove()"></span>`;
+  }
+  return `<span class="pc-cover pc-placeholder" style="--pc-size:${size}px">${icon('music', size >= 100 ? 40 : 20)}</span>`;
+}
+
 function rowsHTML(playlists) {
   return playlists.map((p) => `
     <div class="sb-pl-row" data-playlist-id="${esc(p.playlist_id)}">
       <a class="sb-pl" href="#/playlist/${encodeURIComponent(p.playlist_id)}" data-playlist-id="${esc(p.playlist_id)}" title="${esc(p.title)}">
-        <span class="sb-pl-cover">${p.cover_path ? `<img src="${esc(assetUrl(p.cover_path))}" alt="" loading="lazy" onerror="this.remove()">` : ''}</span>
+        <span class="sb-pl-cover">${playlistCoverHTML(p, 40)}</span>
         <span class="sb-pl-text">
           <span class="sb-pl-title text-body-strong">${esc(p.title)}</span>
           <span class="sb-pl-sub text-caption">Playlist</span>
@@ -55,7 +73,7 @@ function startRename(row, p) {
         await api.renamePlaylist(p.playlist_id, title);
         store.set('playlists', (store.get('playlists') || []).map((x) =>
           String(x.playlist_id) === String(p.playlist_id) ? { ...x, title } : x));
-        toast('Playlist renamed', 'info');
+        toast('Playlist renamed', 'success');
         const route = store.get('route') || {};
         if (route.name === 'playlist' && String((route.params || [])[0]) === String(p.playlist_id)) refreshView();
       } catch (e) { toast(e.message || 'Something went wrong', 'error'); }
@@ -74,7 +92,7 @@ function openPlaylistMenu(row, p, anchor) {
     onConfirm: async () => {
       await api.deletePlaylist(p.playlist_id);
       store.set('playlists', (store.get('playlists') || []).filter((x) => String(x.playlist_id) !== String(p.playlist_id)));
-      toast('Playlist deleted', 'removed');
+      toast('Playlist deleted', 'success');
       const route = store.get('route') || {};
       if (route.name === 'playlist' && String((route.params || [])[0]) === String(p.playlist_id)) location.hash = '#/library';
     },

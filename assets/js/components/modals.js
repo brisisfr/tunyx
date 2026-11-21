@@ -4,7 +4,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 import { icon } from '../icons.js';
-import { esc, fmtTime, refreshView } from '../util.js';
+import { esc, fmtTime, refreshView, debounce, assetUrl } from '../util.js';
 import { toast } from './toast.js';
 
 let layer = null;
@@ -117,7 +117,7 @@ export function openProfileModal() {
     try {
       const data = await api.updateProfile(fd);
       store.set('user', data.user);
-      closeLayer(); toast('Profile updated', 'info');
+      closeLayer(); toast('Profile updated', 'success');
     } catch (ex) {
       btn.disabled = false; toast(ex.message || 'Something went wrong!', 'error');
     }
@@ -128,7 +128,7 @@ export function openProfileModal() {
     try {
       const data = await api.updateProfile({ action: 'remove_avatar' });
       store.set('user', data.user);
-      closeLayer(); toast('Profile updated', 'info');
+      closeLayer(); toast('Profile updated', 'success');
     } catch (ex) {
       b.disabled = false; toast(ex.message || 'Something went wrong!', 'error');
     }
@@ -203,7 +203,7 @@ export function openUploadModal() {
     btn.disabled = true; bar.hidden = false;
     try {
       await api.upload(fd);
-      closeLayer(); toast('Your song was uploaded', 'info'); refreshView();
+      closeLayer(); toast('Your song was uploaded', 'success'); refreshView();
     } catch (ex) {
       btn.disabled = false; bar.hidden = true;
       toast(ex.message || 'Upload failed', 'error');
@@ -212,6 +212,86 @@ export function openUploadModal() {
   f.elements.title.focus();
 }
 window.addEventListener('tunyx:open-upload', openUploadModal);
+
+// ---------- add songs ----------
+export function openAddSongsModal(playlistId, onDone) {
+  const box = openLayer(`
+    <h2 class="md-title md-title-left">Add songs</h2>${xBtn()}
+    <label class="md-add-search">${icon('search', 20)}<input type="search" placeholder="Search songs" autocomplete="off"></label>
+    <div class="md-add-list" role="list" aria-label="Songs"></div>`);
+  const input = box.querySelector('.md-add-search input');
+  const list = box.querySelector('.md-add-list');
+  let existing = new Set();
+  let finished = false;
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    closeLayer();
+    onDone?.();
+    refreshView();
+  };
+  box.querySelector('[data-md-close]')?.addEventListener('click', finish);
+  box.parentElement.addEventListener('mousedown', (e) => { if (e.target === box.parentElement) finish(); });
+  box.parentElement.addEventListener('keydown', (e) => { if (e.key === 'Escape') finish(); });
+
+  async function load(q = '') {
+    list.innerHTML = '<div class="md-add-loading">Loading…</div>';
+    try {
+      const tracks = await api.getTracks(q ? { q } : {});
+      if (!q) tracks.splice(20);
+      if (!tracks.length) {
+        list.innerHTML = '<div class="md-add-empty">No songs found</div>';
+        return;
+      }
+      list.innerHTML = tracks.map((t) => {
+        const added = existing.has(String(t.track_id));
+        return `<div class="md-add-row" role="listitem" data-track-id="${esc(t.track_id)}">
+          <span class="md-add-cover">${t.cover_path ? `<img src="${esc(assetUrl(t.cover_path))}" alt="" loading="lazy" onerror="this.remove()">` : icon('music', 18)}</span>
+          <span class="md-add-text"><span class="md-add-title">${esc(t.title)}</span><span class="md-add-artist">${esc(t.artist_name || 'Unknown artist')}</span></span>
+          <button class="md-add-toggle${added ? ' is-added' : ''}" type="button" aria-label="${added ? 'Already in playlist' : 'Add song'}" ${added ? 'disabled' : ''}>${icon(added ? 'check' : 'plus', 18)}</button>
+        </div>`;
+      }).join('');
+    } catch (ex) {
+      list.innerHTML = `<div class="md-add-empty">${esc(ex.message || 'Could not load songs')}</div>`;
+    }
+  }
+
+  api.getPlaylistTracks(playlistId).then((tracks) => {
+    existing = new Set(tracks.map((t) => String(t.track_id)));
+    load();
+  }).catch(() => load());
+
+  const debounced = debounce((q) => load(q.trim()), 300);
+  input.addEventListener('input', () => debounced(input.value));
+  list.addEventListener('click', async (e) => {
+    const button = e.target.closest('.md-add-toggle');
+    if (!button || button.disabled) return;
+    const row = button.closest('[data-track-id]');
+    const trackId = Number(row.dataset.trackId);
+    button.disabled = true;
+    try {
+      await api.addToPlaylist(playlistId, trackId);
+      existing.add(String(trackId));
+      button.classList.add('is-added');
+      button.innerHTML = icon('check', 18);
+      button.setAttribute('aria-label', 'Already in playlist');
+      toast('Added', 'playlist');
+    } catch (ex) {
+      button.disabled = false;
+      if (ex.status === 409) {
+        existing.add(String(trackId));
+        button.disabled = true;
+        button.classList.add('is-added');
+        button.innerHTML = icon('check', 18);
+        button.setAttribute('aria-label', 'Already in playlist');
+      } else {
+        toast(ex.message || 'Could not add song', 'error');
+      }
+    }
+  });
+  input.focus();
+}
 
 // ---------- confirm delete ----------
 export function openConfirmDelete({ title = 'Are you sure?', text = 'This process can’t be undone.', onConfirm } = {}) {

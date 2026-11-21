@@ -1,23 +1,62 @@
-/* Player bar. Figma Player_Bar: 80 tall, bg/surface, padding 12/24. Now playing left, transport centered, volume + queue right. */
+/* Player bar v2: 68 tall (was 80). The height comes from --playerbar-h, which shell.css sets to 80px on #app;
+   we override it here (same specificity, this file loads later) so the Now Playing overlay, the Up next drawer and
+   the bar itself all agree. Cleaner long-term: change the value in shell.css and delete the next rule. */
+#app { --playerbar-h: 68px; }
+
+/* Now playing left, transport centered, volume + queue right. */
 #playerbar {
   position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-16);
-  height: 80px;
-  padding: var(--space-12) var(--space-24);
+  height: var(--playerbar-h);
+  padding: 0 var(--space-24);
   background: var(--bg-surface);
 }
+
+/* thin gradient progress / seek line on the top edge, on every page. 16px tall invisible hit area, 3px line. */
+#playerbar .pb-progress {
+  --p: 0%;
+  position: absolute; left: 0; right: 0; top: -6px; height: 16px; z-index: 2;
+  cursor: pointer; touch-action: none; outline: 0;
+}
+#playerbar.is-empty .pb-progress { pointer-events: none; opacity: .5; }
+#playerbar .pb-progress::before {                         /* track */
+  content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 3px;
+  background: rgba(110, 103, 148, .45);
+  transition: top .12s, height .12s;
+}
+#playerbar .pb-progress-glow {                            /* filter lives on the parent: clip-path on the child would clip the glow */
+  position: absolute; left: 0; right: 0; top: 6px; height: 3px;
+  filter: drop-shadow(0 0 4px var(--brand-lavender));
+  transition: top .12s, height .12s;
+  pointer-events: none;
+}
+#playerbar .pb-progress-fill {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, #bc74e2, #A493F0, #55C9D8, #bc74e2, #A493F0, #55C9D8, #bc74e2) 0 0 / 200% 100%;
+  clip-path: inset(0 calc(100% - var(--p)) 0 0);
+  animation: pb-slide 6.67s linear infinite;              /* 0.15 cycles/s, like the equalizer */
+}
+@keyframes pb-slide { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { #playerbar .pb-progress-fill { animation: none; background-position: 0 0; } }
+#playerbar .pb-progress:hover::before, #playerbar .pb-progress.is-dragging::before,
+#playerbar .pb-progress:hover .pb-progress-glow, #playerbar .pb-progress.is-dragging .pb-progress-glow { top: 5px; height: 5px; }
+#playerbar .pb-progress:focus-visible::before { box-shadow: 0 0 0 1px var(--brand-lavender); }
+
 #playerbar .pb-now {
   display: flex; align-items: center; gap: var(--space-12);
-  width: 300px; height: 56px; padding: var(--space-8);
+  width: 340px; height: 52px; padding: 6px var(--space-8);
   border-radius: var(--radius-8); background: var(--bg-elevated);
   color: inherit; text-decoration: none; min-width: 0;
 }
 #playerbar.is-empty .pb-now { visibility: hidden; }
 #playerbar .pb-now .tr-cover { background: var(--bg-base); }
 #playerbar .pb-text { display: flex; flex-direction: column; min-width: 0; }
-#playerbar .pb-title { color: var(--brand-lavender); text-shadow: var(--glow-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#playerbar .pb-text { flex: 1 1 auto; }
+/* glow-clipping fix: overflow:hidden would clip the text-shadow into a box, so pad the box and pull it back with a negative margin */
+#playerbar .pb-title { color: var(--brand-lavender); text-shadow: var(--glow-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 14px; margin: -6px -14px; }
+#playerbar .pb-time { flex: none; margin-left: auto; padding-left: var(--space-8); color: var(--text-sec); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 #playerbar .pb-artist { color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 #playerbar button { border: 0; background: none; cursor: pointer; padding: 0; }
@@ -40,6 +79,8 @@
 }
 #playerbar .pb-play:hover { filter: brightness(1.1); }
 #playerbar .pb-play .icon { fill: currentColor; }
+#playerbar .pb-play-icon { display: grid; place-items: center; line-height: 0; }
+#playerbar .pb-play-icon[data-state="play"] { transform: translateX(var(--pb-play-nudge, 1px)); }   /* the triangle's weight is on its left: nudge it to look centred */
 
 #playerbar .pb-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-16); }
 #playerbar .pb-right .pb-btn { color: var(--text-sec); }
@@ -68,4 +109,4 @@
 }
 #playerbar .pb-vol::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--text-main); border: 0; }
 
-@media (max-width: 900px) { #playerbar .pb-now { width: 220px; } #playerbar .pb-vol { display: none; } }
+@media (max-width: 900px) { #playerbar .pb-now { width: 220px; } #playerbar .pb-time { display: none; } #playerbar .pb-vol { display: none; } }

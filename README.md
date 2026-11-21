@@ -1,9 +1,11 @@
 # tunyx
 
-## Frontend
+## Beta V1 Ready! , functional but some part lacks QOL
+
+## Start up
 
 1. Start Apache and MySQL in XAMPP.
-2. Import `db/(WAJIB PAKAI INI)skema.sql` in phpMyAdmin. This creates the `tunyx` database. There is no seed data: the app starts empty.
+2. Import `db/maincschema.sql` in phpMyAdmin. This creates the `tunyx` database. There is no seed data: the app starts empty.
 3. Open `http://localhost/tunyx/`.
 4. Register an account (username 3-30 letters/numbers/`_`/`.`, password 6-64 printable ASCII with no spaces, valid email), then upload a song.
 5. `http://localhost/tunyx/?mock=1` runs the offline demo (no PHP/MySQL needed).

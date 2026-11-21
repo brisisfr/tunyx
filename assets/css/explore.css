@@ -5,7 +5,7 @@
   height: 200px;
   margin: 10px 10px 0;
   border-radius: var(--radius-16);
-  background: var(--bg-elevated) url(../img/explore-banner.jpg) center 30% / cover no-repeat;
+  background: var(--bg-elevated) url(../img/explore-banner.png) center 30% / cover no-repeat;
 }
 
 #view .view-explore .ex-title { margin: 24px 0 0 10px; }

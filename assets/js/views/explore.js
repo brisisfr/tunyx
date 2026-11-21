@@ -1,5 +1,5 @@
 // Explorer (Figma Main 55:4201): banner 1000x300 (10px inset, radius 16) + "Explore Songs" cards in a
-// horizontal scroller. The banner image was pulled out of the SVG export as assets/img/explore-banner.jpg.
+// horizontal scroller. The banner image was pulled out of the SVG export as assets/img/explore-banner.png.
 import { api } from '../api.js';
 import { emptyHTML } from '../util.js';
 import { trackCardHTML, bindCards } from '../components/trackCard.js';

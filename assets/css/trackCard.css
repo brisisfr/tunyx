@@ -34,7 +34,17 @@
 #view .tc-name { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
 #view .tc-name .tc-title { flex: 1; min-width: 0; }
 #view .tc-time { flex: none; margin-left: var(--space-8); color: var(--text-sec); white-space: nowrap; }
-#view .tc-artist { width: 200px; margin: var(--space-4) 0 0; color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 16px; }
+#view .tc-artist {
+  display: block;
+  width: 200px;
+  min-height: 18px;
+  margin: var(--space-4) 0 0;
+  color: var(--text-sec);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 16px;
+}
 
 /* now playing, same treatment as the rows */
 #view .tc.is-playing .tc-title { color: var(--brand-lavender); text-shadow: var(--glow-soft); }

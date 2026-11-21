@@ -3,8 +3,8 @@
    four 48px buttons 80 apart, track/header, then rows 56 tall every 60. */
 
    #view .pl-hero {
-     margin: 24px;
-     padding: 24px;
+     margin: 16px 24px 8px;
+     padding: 16px 24px;
      border-radius: 16px;
      background: linear-gradient(135deg, rgba(188,116,226,.28) 0%, rgba(164,147,240,.16) 45%, transparent 85%);
    }
@@ -13,13 +13,13 @@
   display: flex;
   align-items: flex-start;
   gap: 62px;
-  padding: 42px;
 }
 
-#view .pl-head .tr-cover { width: 200px; height: 200px; }
-#view .pl-head .tr-cover .icon { width: 40px; height: 40px; }
+#view .pl-head .tr-cover { width: 280px; height: 280px; }
+#view .pl-head .tr-cover .icon { width: 64px; height: 64px; }
+#view .pl-head .pc-cover { flex: none; }
 
-#view .pl-meta { min-width: 0; }
+#view .pl-meta { min-width: 0; min-height: 280px; flex: 1; display: flex; flex-direction: column; }
 #view .pl-title { margin: 0; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #view .pl-title[role="button"] { cursor: text; border-radius: var(--radius-8); }
 #view .pl-title[role="button"]:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--brand-lavender); }
@@ -38,7 +38,7 @@
 #view .pl-stats { display: flex; flex-direction: column; gap: 13px; margin-top: 16px; color: var(--text-sec); }
 
 /* action row: transparent 48px buttons, centres 80 apart (48 + 32), 24px below the stats */
-#view .pl-actions { display: flex; gap: 32px; margin-top: 24px; }
+#view .pl-actions { display: flex; gap: 32px; margin-top: auto; padding-top: 16px; }
 #view .pl-act {
   display: grid;
   place-items: center;
@@ -55,3 +55,21 @@
 #view .pl-act:disabled { cursor: default; }
 
 #view .pl-list { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-8); }
+
+@media (max-width: 1280px) {
+  #view .pl-head .tr-cover { width: 240px; height: 240px; }
+  #view .pl-head .pc-cover { --pc-size: 240px; }
+  #view .pl-meta { min-height: 240px; }
+}
+
+@media (max-width: 900px) {
+  #view .pl-hero { margin-left: 12px; margin-right: 12px; padding: 12px; }
+  #view .pl-head { gap: 24px; }
+  #view .pl-head .tr-cover { width: 200px; height: 200px; }
+  #view .pl-head .pc-cover { --pc-size: 200px; }
+  #view .pl-meta { min-height: 200px; }
+  #view .pl-title { font-size: 24px; line-height: 32px; }
+  #view .pl-owner { margin-top: 8px; }
+  #view .pl-stats { margin-top: 8px; gap: 4px; }
+  #view .pl-actions { gap: 16px; }
+}

@@ -89,7 +89,7 @@ export default {
       extras: true,
       // the playlist's own cover (or the backend's first-track fallback) beats the first track's art
       cover: meta?.cover_path ? { track_id: meta.playlist_id, cover_path: meta.cover_path } : undefined,
-      coverHTML: meta ? playlistCoverHTML(meta, 200) : undefined,
+      coverHTML: meta ? playlistCoverHTML(meta, 280) : undefined,
       empty: emptyHTML('list-plus', 'Empty :(', 'Add songs from any track menu.'),
       onRename: meta ? async (title) => {
         await api.renamePlaylist(id, title);

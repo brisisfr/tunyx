@@ -12,10 +12,10 @@
 
 #view .view-explore .ex-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 220px);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, 250px);
+  gap: 12px;
   justify-content: start;
-  margin: 12px 0 0 18px;
+  margin: 12px 0 0 10px;
 }
 
 #view .view-explore .empty { margin: 24px 0 0 18px; }

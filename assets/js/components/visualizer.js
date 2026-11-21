@@ -8,7 +8,7 @@
 import { player } from '../player.js';
 
 // ---- tweakable look (all the "flashy" numbers live here) ----
-const BARS = 32;
+const BARS = 64;                // v1/v2.0 had 32
 const MIN_H = 14;               // px, height of a silent pill
 const MAX_FRAC = 0.85;          // tallest pill = this fraction of the canvas height
 const LEVEL_EXP = 1.35;         // lower = more reactive to quiet sounds (v1: 1.7)
@@ -17,8 +17,9 @@ const RELEASE = 0.22;           // how fast bars fall (v1: 0.15)
 const KICK_GAIN = 0.6;          // extra height on a bass hit (v1: 0.35)
 const KICK_THRESHOLD = 0.08;    // unchanged
 const GLOW_BASE = 12, GLOW_KICK = 26;
-const SPAN_L = 0.08, SPAN_R = 0.92;                  // horizontal extent of the row, as a fraction of the window
-const BAR_W_MIN = 10, BAR_W_MAX = 28, BAR_W_FRAC = 0.5;   // BAR_W = clamp(MIN, vw / BARS * FRAC, MAX)
+// the row runs corner to corner: the window is split into BARS equal slots and each pill is centred in its slot
+const BAR_W_MIN = 4, BAR_W_MAX = 18, BAR_W_FRAC = 0.55;   // BAR_W = clamp(MIN, slot width * FRAC, MAX)
+const KICK_BARS = BARS / 8;     // the lowest bars that feed kick detection (4 of 32 before)
 const PAD_TOP = 44;             // room above the tallest pill so the glow isn't clipped
 const PAD_BOTTOM = 2;
 const DPR_CAP = 2;
@@ -109,38 +110,46 @@ export function mountVisualizer({ canvas }) {
     const lit = progress * BARS;
 
     let bass = 0;
-    for (let i = 0; i < 4; i++) bass += smooth[i] / 4;
+    for (let i = 0; i < KICK_BARS; i++) bass += smooth[i] / KICK_BARS;
     avgBass += (bass - avgBass) * 0.02;
     const spike = Math.max(0, bass - avgBass - KICK_THRESHOLD);
     kick = Math.min(1, Math.max(kick * 0.88, spike * 3));
 
-    const x0 = vw * SPAN_L, span = vw * (SPAN_R - SPAN_L);
-    const BAR_W = Math.min(Math.max(BAR_W_MIN, (vw / BARS) * BAR_W_FRAC, 0), BAR_W_MAX, (span / BARS) * 0.8);
-    const GAP = (span - BARS * BAR_W) / (BARS - 1);
+    const slot = vw / BARS;
+    const BAR_W = Math.min(Math.max(BAR_W_MIN, slot * BAR_W_FRAC), BAR_W_MAX, slot * 0.8);
+    const inset = (slot - BAR_W) / 2;
     const maxH = Math.min(vh - PAD_TOP - PAD_BOTTOM, vh * MAX_FRAC);
     const base = vh - PAD_BOTTOM;
 
-    const P = span;                                        // one color cycle = row width
+    const P = vw;                                          // one color cycle = row width
     const phase = reduceMotion ? 0 : (performance.now() / 1000 * CYCLE_SPEED) % 1;
     const s = -P + phase * P;
-    const grad = g.createLinearGradient(x0 + s, 0, x0 + s + 2 * P, 0);
+    const grad = g.createLinearGradient(s, 0, s + 2 * P, 0);
     for (let n = 0; n <= 6; n++) grad.addColorStop(n / 6, COLORS[n % 3]);
 
     for (let i = 0; i < BARS; i++) {
       const f = BARS - 1 - i;                              // bass on the right
       let level = 0;
       if (analyser) {
-        const a = Math.floor(LO_BIN * Math.pow(HI_BIN / LO_BIN, i / BARS));
-        const b = Math.max(a + 1, Math.floor(LO_BIN * Math.pow(HI_BIN / LO_BIN, (i + 1) / BARS)));
-        let sum = 0;
-        for (let k = a; k < b; k++) sum += data[k];
-        level = Math.pow(sum / (b - a) / 255, LEVEL_EXP);
+        const a = LO_BIN * Math.pow(HI_BIN / LO_BIN, i / BARS);
+        const b = LO_BIN * Math.pow(HI_BIN / LO_BIN, (i + 1) / BARS);
+        let v;
+        if (b - a >= 1) {                                  // wide range (highs): average the bins
+          const ia = Math.floor(a), ib = Math.max(ia + 1, Math.floor(b));
+          let sum = 0;
+          for (let k = ia; k < ib; k++) sum += data[k];
+          v = sum / (ib - ia);
+        } else {                                           // narrow range (bass, 64 bars): interpolate so neighbours differ smoothly
+          const c = (a + b) / 2, k = Math.floor(c), t = c - k;
+          v = data[k] * (1 - t) + data[k + 1] * t;
+        }
+        level = Math.pow(v / 255, LEVEL_EXP);
       }
       const prev = smooth[i];
       smooth[i] = level > prev ? prev + (level - prev) * ATTACK : prev + (level - prev) * RELEASE;
       level = smooth[i];
       const h = Math.min(vh - PAD_TOP - PAD_BOTTOM, (MIN_H + level * (maxH - MIN_H)) * (1 + kick * KICK_GAIN));
-      const x = x0 + f * (BAR_W + GAP), y = base - h;
+      const x = f * slot + inset, y = base - h;
       const fa = Math.min(1, Math.max(0, lit - f));        // how much of this pill is lit
 
       g.fillStyle = DIM;                                   // translucent dim pill, always
@@ -148,7 +157,7 @@ export function mountVisualizer({ canvas }) {
 
       if (fa > 0) {                                        // lit pill: opaque gradient + glow that swells on kicks
         g.save();
-        g.shadowColor = colorAt(x + BAR_W / 2 - x0, s, P);
+        g.shadowColor = colorAt(x + BAR_W / 2, s, P);
         g.shadowBlur = GLOW_BASE + kick * GLOW_KICK;
         g.globalAlpha = fa;                                // the one partial pill fades in
         g.fillStyle = grad;

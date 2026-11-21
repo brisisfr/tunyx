@@ -15,10 +15,10 @@
 
 #view .view-home .hm-cards {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-top: 20px;
   padding-bottom: var(--space-4);
-  overflow-x: auto;
 }
 
 #view .view-home .empty { margin: 24px 0 0 10px; }

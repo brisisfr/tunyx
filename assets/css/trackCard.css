@@ -7,9 +7,10 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  width: 220px;
+  width: 250px;
   height: 275px;
-  padding: 10px;
+  padding: 10px 25px;
+  box-sizing: border-box;
   border-radius: var(--radius-12);
   cursor: pointer;
   outline: none;
@@ -21,18 +22,19 @@
   #view .tc:hover .tr-cover { background: var(--bg-base); }
 }
 
-/* title row: title column 127 wide so the time starts at x145; both start on the same top edge */
+/* title and duration share one row; the title takes the remaining width */
 #view .tc-row {
-  display: grid;
-  grid-template-columns: 127px minmax(0, 1fr);
-  align-items: start;
-  margin: 20px 0 0 var(--space-8);
+  display: flex;
+  align-items: baseline;
+  width: 200px;
+  margin-top: 20px;
 }
 /* padding + equal negative margin: the ellipsis clip box includes room for the glow */
 #view .tc-title { padding: 6px 14px; margin: -6px -14px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#view .tc-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
-#view .tc-time { color: var(--text-sec); }
-#view .tc-artist { margin: var(--space-4) 0 0 var(--space-8); color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#view .tc-name { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+#view .tc-name .tc-title { flex: 1; min-width: 0; }
+#view .tc-time { flex: none; margin-left: var(--space-8); color: var(--text-sec); white-space: nowrap; }
+#view .tc-artist { width: 200px; margin: var(--space-4) 0 0; color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 16px; }
 
 /* now playing, same treatment as the rows */
 #view .tc.is-playing .tc-title { color: var(--brand-lavender); text-shadow: var(--glow-soft); }

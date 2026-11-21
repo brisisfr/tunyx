@@ -45,7 +45,7 @@ export function playlistCoverHTML(p, size = 40) {
   if (coverPaths.length) {
     return `<span class="pc-cover pc-single" style="--pc-size:${size}px"><img src="${esc(assetUrl(coverPaths[0]))}" alt="" loading="lazy" onerror="this.remove()"></span>`;
   }
-  return `<span class="pc-cover pc-placeholder" style="--pc-size:${size}px">${icon('music', size >= 100 ? 40 : 20)}</span>`;
+  return `<span class="pc-cover pc-placeholder" style="--pc-size:${size}px">${icon('music', size >= 100 ? 64 : 20)}</span>`;
 }
 
 function rowsHTML(playlists) {

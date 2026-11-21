@@ -43,7 +43,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: 16px;
+  line-height: 18px;
 }
 
 /* now playing, same treatment as the rows */

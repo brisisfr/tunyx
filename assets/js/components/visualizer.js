@@ -14,9 +14,9 @@ const MAX_FRAC = 0.85;          // tallest pill = this fraction of the canvas he
 const LEVEL_EXP = 1.35;         // lower = more reactive to quiet sounds (v1: 1.7)
 const ATTACK = 0.75;            // how fast bars rise (v1: 0.6)
 const RELEASE = 0.22;           // how fast bars fall (v1: 0.15)
-const KICK_GAIN = 0.6;          // extra height on a bass hit (v1: 0.35)
+const KICK_GAIN = 0.5;          // extra height on a bass hit (v1: 0.35)
 const KICK_THRESHOLD = 0.08;    // unchanged
-const GLOW_BASE = 12, GLOW_KICK = 26;
+const GLOW_BASE = 12, GLOW_KICK = 30;
 // the row runs corner to corner: the window is split into BARS equal slots and each pill is centred in its slot
 const BAR_W_MIN = 4, BAR_W_MAX = 18, BAR_W_FRAC = 0.55;   // BAR_W = clamp(MIN, slot width * FRAC, MAX)
 const KICK_BARS = BARS / 8;     // the lowest bars that feed kick detection (4 of 32 before)

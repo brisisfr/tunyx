@@ -1,11 +1,14 @@
+
 <?php
+// api untuk bikin si album ini
+// Menangani pengelolaan dan pengambilan data album.
 require_once __DIR__ . "/helpers.php";
 require_method("GET");
 
 $userId  = require_login();
 $albumId = (int) ($_GET["album_id"] ?? 0);
 
-// ---- Album list (only albums with at least one song this user may see) ----
+// ---- Album list ----
 if ($albumId < 1) {
     $stmt = $pdo->prepare("
         SELECT al.album_id, al.title, ar.name AS artist_name, al.release_date, al.cover_path,

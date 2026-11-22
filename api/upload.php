@@ -1,4 +1,7 @@
+
 <?php
+// ini api buat upload lagu.
+//	Memproses unggahan lagu, cover, serta penyimpanan datanya.
 require_once __DIR__ . "/helpers.php";
 require_method("POST");
 

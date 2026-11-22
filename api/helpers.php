@@ -1,6 +1,9 @@
+
 <?php
-// Semua error PHP dikirim sebagai JSON, bukan halaman HTML,
-// biar frontend bisa baca pesannya.
+// Semua error PHP dikirim sebagai JSON, bukan halaman HTML
+// biar frontend bisa baca pesannya
+// api helper ini buat deteksi error2 gitu 
+// 	Kumpulan fungsi bantuan untuk session, validasi request, dan respons API.
 ini_set("display_errors", "0");
 
 require_once __DIR__ . "/db.php";

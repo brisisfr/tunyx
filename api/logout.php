@@ -1,4 +1,7 @@
+
 <?php
+// yaa ini api buat log out akun. dah itu aja
+// Mengakhiri session pengguna.
 require_once __DIR__ . "/helpers.php";
 require_method("POST");
 

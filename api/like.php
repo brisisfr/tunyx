@@ -1,4 +1,7 @@
+
 <?php
+// ini api buat marking lagu yang kita sukai. gampangnya filtering gitu lah ya
+// Menangani fitur menyukai dan membatalkan suka lagu.
 require_once __DIR__ . "/helpers.php";
 require_method("POST");
 

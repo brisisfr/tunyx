@@ -1,4 +1,7 @@
+
 <?php
+// ini buat registrasi akun atau gampangnya bikin akun buat dipake sama user. 
+// Menangani proses pendaftaran akun baru.
 require_once __DIR__ . "/helpers.php";
 require_method("POST");
 

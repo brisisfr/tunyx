@@ -1,4 +1,7 @@
+
 <?php
+// 	Menyediakan data katalog lagu beserta pencarian dan filter.
+
 require_once __DIR__ . "/helpers.php";
 require_method(["GET", "POST"]);
 

@@ -1,4 +1,7 @@
+
 <?php
+// ini api buat nunjukin lagu yang ada di dalam playlist si user. jadi misal playlist A maka ada berbagai macam lagu yang ia tambakan ke playlist miliknnya
+// 	Mengelola lagu yang terdapat di dalam playlist.
 require_once __DIR__ . "/helpers.php";
 $userId = require_login();
 $method = $_SERVER["REQUEST_METHOD"] ?? "GET";

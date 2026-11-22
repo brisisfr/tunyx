@@ -1,4 +1,7 @@
+
 <?php
+// ini api buat history lagu yg dimainkan. jadi bisa next atau previous lagu 
+// Mencatat, menampilkan, dan menghapus riwayat pemutaran.
 require_once __DIR__ . "/helpers.php";
 $userId = require_login();
 $method = $_SERVER["REQUEST_METHOD"] ?? "GET";

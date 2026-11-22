@@ -1,4 +1,7 @@
+
 <?php
+// ini buat login. jadi sebelum pake aplikasi, user atau pengguna harus login dengan akun yang dibuat oleh user. kalau gk punya yaa bikin
+// 	Memverifikasi identitas pengguna dan membuat session login.
 require_once __DIR__ . "/helpers.php";
 require_method("POST");
 

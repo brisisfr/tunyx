@@ -1,4 +1,7 @@
+
 <?php
+// ini untuk profil si user. tapi di progress kali ini gk bisa dipakai dulu di player terbaru. cuma bisa di player lama doang
+// Menangani pengelolaan informasi profil pengguna.
 require_once __DIR__ . "/helpers.php";
 require_method("POST");
 

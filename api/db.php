@@ -1,4 +1,7 @@
+
 <?php
+// ini api untuk manggil database sql local agar bisa sinkron dengan aplikasi web-nya
+// 	Penghubung aplikasi dengan database MySQL.
 $host    = "127.0.0.1";
 $db      = "tunyx";
 $user    = "root";

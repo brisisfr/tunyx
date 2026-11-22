@@ -212,7 +212,7 @@ Everything you create (accounts, uploads, playlists) lives in your own local dat
 
 Provided "as is", without warranty of any kind. The authors are not liable for any damages or losses arising from the use of this software. See the [LICENSE](LICENSE) for the full terms.
 
-## 🙏 Special thanks
+## 🙏 Special thanks!
 
 | Name | Role | Profile | 
 |---|---|---|

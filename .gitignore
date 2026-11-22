@@ -1,3 +1,7 @@
-uploads/*
-!uploads/.gitkeep
-api/config.php
+uploads/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+.env

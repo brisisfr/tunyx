@@ -2,7 +2,7 @@
 -- TUNYX Database Schema (v2)
 -- Engine: InnoDB | Charset: utf8mb4 | Collation: utf8mb4_unicode_ci
 -- ==========================================================
-
+-- utf8mb4 so non-Latin characters (e.g. kanji) can be stored in the tables
 CREATE DATABASE IF NOT EXISTS tunyx
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -147,7 +147,7 @@ CREATE TABLE likes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
--- 8. play_history (untuk Recently Played / Up Next)
+-- 8. play_history (Recently Played / Up Next)
 -- ----------------------------------------------------------
 CREATE TABLE play_history (
   history_id INT AUTO_INCREMENT PRIMARY KEY,

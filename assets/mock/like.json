@@ -4,9 +4,9 @@
   "data": [
     {
       "track_id": 1,
-      "title": "Hana no Tou",
-      "artist_name": "Sayuri",
-      "album_title": "Sanketsu Shōjo",
+      "title": "Demo Track 1",
+      "artist_name": "Demo Artist",
+      "album_title": "Demo Album",
       "cover_path": "uploads/covers/track_001.jpg",
       "file_path": "uploads/songs/song_001.flac",
       "duration_sec": 275,
@@ -14,9 +14,9 @@
     },
     {
       "track_id": 2,
-      "title": "Vivarium",
-      "artist_name": "Ado",
-      "album_title": "Vivarium",
+      "title": "Demo Track 2",
+      "artist_name": "Demo Artist",
+      "album_title": "Demo Album",
       "cover_path": "uploads/covers/track_002.jpg",
       "file_path": "uploads/songs/song_002.flac",
       "duration_sec": 243,
